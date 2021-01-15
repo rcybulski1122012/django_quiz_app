@@ -56,7 +56,9 @@ ROOT_URLCONF = 'quiz_app.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'common' / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'common' / 'templates'
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -121,6 +123,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = 'staticfiles'
+STATICFILES_DIRS = [
+    'common/static/'
+]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
-
