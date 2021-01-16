@@ -16,7 +16,7 @@ class TestRegisterView(QuizzesTestMixin, TestCase):
 
     def test_when_request_method_is_post_and_data_is_correct_should_create_account(self):
         data = {'username': 'User123', 'email': 'emailaddress123@gmail.com',
-            'password1': 'SecretPass123', 'password2': 'SecretPass123'}
+                'password1': 'SecretPass123', 'password2': 'SecretPass123'}
         self.client.post(self.view_url, data, follow=True)
         does_user_exist = User.objects.filter(username=data['username']).exists()
         self.assertTrue(does_user_exist)

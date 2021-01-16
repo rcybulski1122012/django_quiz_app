@@ -2,13 +2,14 @@
 {% load crispy_forms_tags %}
 
 {% block title %}
-  Create an account
+Login
 {% endblock %}
 
 {% block content %}
 <form method="post">
   {{ form|crispy }}
   {% csrf_token %}
-  <input type="submit" value="Create an account" class="btn btn-primary">
+  <input type="submit" value="Login" class="btn btn-primary">
 </form>
+<p class="my-3">Haven't created an account yet? You can do it <a href="{% url 'users:register' %}">here</a>!</p>
 {% endblock %}
