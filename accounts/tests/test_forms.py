@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from users.forms import UserRegistrationForm
+from accounts.forms import UserRegistrationForm
 from common.test_utils import QuizzesTestMixin
 
 

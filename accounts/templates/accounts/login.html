@@ -11,5 +11,5 @@ Login
   {% csrf_token %}
   <input type="submit" value="Login" class="btn btn-primary">
 </form>
-<p class="my-3">Haven't created an account yet? You can do it <a href="{% url 'users:register' %}">here</a>!</p>
+<p class="my-3">Haven't created an account yet? You can do it <a href="{% url 'accounts:register' %}">here</a>!</p>
 {% endblock %}

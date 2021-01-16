@@ -8,7 +8,7 @@ User = get_user_model()
 
 
 class TestRegisterView(QuizzesTestMixin, TestCase):
-    view_url = reverse('users:register')
+    view_url = reverse('accounts:register')
 
     def test_when_request_method_is_get_status_code_should_be_equal_200(self):
         response = self.client.get(self.view_url)

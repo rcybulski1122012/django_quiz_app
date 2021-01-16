@@ -21,5 +21,5 @@ from common.views import HomePageView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', HomePageView.as_view(), name='home'),
-    path('users/', include('users.urls', namespace='users')),
+    path('accounts/', include('accounts.urls', namespace='accounts')),
 ]
