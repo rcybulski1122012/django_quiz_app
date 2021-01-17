@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load thumbnail %}
+
+{% block title %}
+Profile
+{% endblock %}
+
+{% block content %}
+<h1><img src="{{ request.user.profile.photo|thumbnail_url:'avatar' }}" alt="profile photo"> Your profile</h1>
+<p class="mt-4">
+  Username: <strong>{{ request.user.username }}</strong><br>
+  Email: <strong> {{ request.user.email }}</strong>
+</p>
+<p>You can change your profile description or your photo below.</p>
+<form method="post" enctype="multipart/form-data">
+  {{ form|crispy }}
+  {% csrf_token %}
+  <input type="submit" value="Update profile" class="btn btn-primary">
+</form>
+{% endblock %}

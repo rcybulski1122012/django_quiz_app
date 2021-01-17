@@ -1,6 +1,9 @@
 from django import forms
+from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+
+from accounts.models import Profile
 
 User = get_user_model()
 
@@ -28,3 +31,12 @@ class UserRegistrationForm(UserCreationForm):
             user.save()
         return user
 
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['description', 'photo']
+
+    def __init__(self, *args, **kwargs):
+        super(ProfileEditForm, self).__init__(*args, **kwargs)
+        self.fields['description'].help_text = 'Up to 500 characters.'
