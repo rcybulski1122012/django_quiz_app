@@ -139,3 +139,5 @@ THUMBNAIL_ALIASES = {
         'avatar': {'size': (50, 50), 'crop': True},
     },
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
