@@ -12,6 +12,7 @@ Profile
   Username: <strong>{{ request.user.username }}</strong><br>
   Email: <strong> {{ request.user.email }}</strong>
 </p>
+<a href="{% url 'accounts:password_change' %}" class="btn btn-primary mb-4">Change password</a>
 <p>You can change your profile description or your photo below.</p>
 <form method="post" enctype="multipart/form-data">
   {{ form|crispy }}
