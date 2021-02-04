@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='Profile',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('photo', models.ImageField(blank=True, default='default.jpg', upload_to='profile_photos/')),
+                ('photo', models.ImageField(blank=True, default='default-profile.jpg', upload_to='profile_photos/')),
                 ('description', models.TextField(blank=True, max_length=500)),
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],

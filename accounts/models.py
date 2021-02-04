@@ -4,7 +4,7 @@ from django.db import models
 
 class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    photo = models.ImageField(upload_to='profile_photos/', default='default.jpg')
+    photo = models.ImageField(upload_to='profile_photos/', default='default-profile.jpg')
     description = models.TextField(max_length=500, blank=True)
 
     def __str__(self):
