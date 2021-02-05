@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 
 from accounts.forms import UserRegistrationForm, ProfileEditForm
+from quizzes.models import Quiz
 
 
 def register(request):
@@ -21,6 +22,7 @@ def register(request):
 @login_required
 def profile(request):
     user = request.user
+    quizzes = Quiz.objects.filter(author=user)
 
     if request.method == 'POST':
         form = ProfileEditForm(request.POST, request.FILES, instance=user.profile)
@@ -30,4 +32,4 @@ def profile(request):
     else:
         form = ProfileEditForm(instance=user.profile)
 
-    return render(request, 'accounts/profile.html', {'form': form})
+    return render(request, 'accounts/profile.html', {'form': form, 'quizzes': quizzes})

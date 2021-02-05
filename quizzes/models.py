@@ -34,6 +34,9 @@ class Quiz(models.Model):
     def __str__(self):
         return self.title
 
+    def __repr__(self):
+        return f'<Quiz: {self.title}>'
+
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)
         super().save(*args, **kwargs)

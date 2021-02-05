@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from accounts.models import Profile
+from quizzes.models import Category, Quiz, Question
 
 
 class TestRegisterView(TestCase):
@@ -67,6 +68,7 @@ class TestProfileView(TestCase):
     def test_updates_profile_when_data_is_correct(self):
         user = User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
         self.client.login(username='User123', password='SecretPass123')
+
         self.client.post(self.profile_url, data={'description': 'New Description'})
         user.refresh_from_db()
         self.assertEqual(user.profile.description, 'New Description')
@@ -74,5 +76,18 @@ class TestProfileView(TestCase):
     def test_displays_success_message_when_profile_is_updated(self):
         User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
         self.client.login(username='User123', password='SecretPass123')
-        response = self.client.post(self.profile_url, data={'description': 'New Description'})
+
+        response = self.client.post(self.profile_url, data={'description': 'New Description'}, follow=True)
         self.assertContains(response, 'Your Profile has been updated successfully.')
+
+    def test_context_contains_list_of_quizzes_created_by_user(self):
+        self.category = Category.objects.create(title='Category')
+        self.user1 = User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
+        self.user2 = User.objects.create_user('User124', 'addressemail124@gmail.com', 'SecretPass123')
+        self.quiz = Quiz.objects.create(title='Title', category=self.category, author=self.user1)
+        self.quiz = Quiz.objects.create(title='Other Quiz', category=self.category, author=self.user2)
+        self.question = Question.objects.create(question='Question', quiz=self.quiz)
+        self.client.login(username='User123', password='SecretPass123')
+
+        response = self.client.get(self.profile_url)
+        self.assertQuerysetEqual(response.context['quizzes'], ['<Quiz: Title>'])

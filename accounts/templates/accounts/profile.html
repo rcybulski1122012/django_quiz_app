@@ -19,4 +19,15 @@ Profile
   {% csrf_token %}
   <input type="submit" value="Update profile" class="btn btn-primary">
 </form>
+
+<div>
+  <h2>Your quizzes</h2>
+  <ul class="list-group">
+    {% for quiz in quizzes %}
+      <li class="list-group-item"><a href="#">{{ quiz.title }}</a></li>
+    {% empty %}
+      <p>You haven't created any quiz yet.</p>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}
