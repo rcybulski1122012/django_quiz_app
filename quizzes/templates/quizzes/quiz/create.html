@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load quizzes_utils %}
+
+{% block title %}
+Create a quiz
+{% endblock %}
+
+{% block content %}
+<h2>Create a quiz</h2>
+<form method="get" class="mb-5">
+  <label for="questions">Number of questions</label>
+  <input type="number" name="questions" id="questions"
+         placeholder="{% questions_placeholder request.GET.questions %}"
+         class="form-control">
+  <input type="submit" value="Change number of questions" class="btn btn-outline-primary mt-2">
+</form>
+<form method="post" enctype="multipart/form-data">
+  {{ quiz_form|crispy }}
+
+  {{ questions_formset.management_form }}
+
+  {% if questions_formset.non_form_errors %}
+    <div class="alert alert-block alert-danger pb-0">
+      {{ questions_formset.non_form_errors }}
+    </div>
+  {% endif %}
+
+  {% for question_form in questions_formset.forms %}
+    <hr style="height:5px">
+    {{ question_form.message.errors }}
+
+    {{ question_form|crispy }}
+
+    {% with answer_formset=question_form.nested %}
+      {{ answer_formset.management_form }}
+      <div style="width: 95%;" class="ml-auto">
+        {% if answer_formset.non_form_errors %}
+          <div class="alert alert-block alert-danger pb-0">
+            {{ answer_formset.non_form_errors }}
+          </div>
+        {% endif %}
+        {% for answer_form in answer_formset %}
+          {{ answer_form|crispy }}
+        {% endfor %}
+      {% endwith %}
+    </div>
+  {% endfor %}
+  <hr style="height:5px">
+  {% csrf_token %}
+  <p><input type="submit" value="Create" class="btn btn-primary"></p>
+</form>
+{% endblock %}

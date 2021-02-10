@@ -1,10 +1,10 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from quizzes.forms import QuizCreationForm, AnswerFormSet, create_question_formset
+from quizzes.forms import QuizForm, AnswerFormSet, create_question_formset
 from quizzes.models import Category, Quiz, Question, Answer
 
-QuestionFormSet = create_question_formset(number_of_question=1)
+QuestionFormSet = create_question_formset(number_of_questions=1)
 
 
 class TestQuizCreationForm(TestCase):
@@ -17,7 +17,7 @@ class TestQuizCreationForm(TestCase):
             'title': 'Example',
             'category': str(self.category.pk),
         }
-        form = QuizCreationForm(data=data)
+        form = QuizForm(data=data)
         self.assertTrue(form.is_valid())
 
     def test_is_invalid_when_quiz_with_the_same_title_already_exists(self):
@@ -26,7 +26,7 @@ class TestQuizCreationForm(TestCase):
             'title': 'Example',
             'category': str(self.category.pk),
         }
-        form = QuizCreationForm(data=data)
+        form = QuizForm(data=data)
         self.assertFalse(form.is_valid())
 
     def test_saves_quiz_with_given_author(self):
@@ -35,7 +35,7 @@ class TestQuizCreationForm(TestCase):
             'category': str(self.category.pk),
         }
 
-        form = QuizCreationForm(data=data)
+        form = QuizForm(data=data)
         quiz = form.save(author=self.user, commit=True)
         self.assertIs(quiz.author, self.user)
         self.assertTrue(Quiz.objects.filter(title=quiz.title).exists())

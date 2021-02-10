@@ -5,4 +5,5 @@ app_name = 'quizzes'
 
 urlpatterns = [
     path('create/', views.create_quiz, name='create'),
+    path('update/<slug:quiz_slug>/', views.update_quiz, name='update')
 ]

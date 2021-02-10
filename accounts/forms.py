@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 
 from accounts.models import Profile
 
+SAME_EMAIL_ERROR = 'An account with the same email already exists!'
+
 
 class UserRegistrationForm(UserCreationForm):
     class Meta:
@@ -18,7 +20,7 @@ class UserRegistrationForm(UserCreationForm):
     def clean_email(self):
         email = self.cleaned_data['email']
         if User.objects.filter(email=email).exists():
-            raise forms.ValidationError('An account with the same email already exists!')
+            raise forms.ValidationError(SAME_EMAIL_ERROR)
         return email
 
     def save(self, commit=True):

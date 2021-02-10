@@ -2,8 +2,9 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.forms import SAME_EMAIL_ERROR
 from accounts.models import Profile
-from quizzes.models import Category, Quiz, Question
+from quizzes.models import Category, Quiz
 
 
 class TestRegisterView(TestCase):
@@ -45,12 +46,11 @@ class TestRegisterView(TestCase):
              'A user with that username already exists.'],
             [{'username': 'OtherUser123', 'email': 'addressemail123@gmail.com',
               'password1': 'SecretPass123', 'password2': 'SecretPass123'},
-             'An account with the same email already exists!'],
+             SAME_EMAIL_ERROR],
             [{'username': 'OtherUser123', 'email': 'otheremail123@gmail.com',
               'password1': 'SecretPass123', 'password2': 'OtherPassword123'},
              'The two password fields didn’t match.'],
         ]
-
         for data, expected_message in params:
             with self.subTest():
                 response = self.client.post(self.register_url, data=data)
@@ -61,33 +61,36 @@ class TestProfileView(TestCase):
     profile_url = reverse('accounts:profile')
     login_url = reverse('accounts:login')
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
+
+    def setUp(self):
+        self.client.login(username='User123', password='SecretPass123')
+
     def test_redirects_to_login_page_when_user_is_not_logged(self):
+        self.client.logout()
         response = self.client.get(self.profile_url, follow=True)
         self.assertRedirects(response, f'{self.login_url}?next={self.profile_url}')
 
     def test_updates_profile_when_data_is_correct(self):
-        user = User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
-        self.client.login(username='User123', password='SecretPass123')
-
         self.client.post(self.profile_url, data={'description': 'New Description'})
-        user.refresh_from_db()
-        self.assertEqual(user.profile.description, 'New Description')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.profile.description, 'New Description')
 
     def test_displays_success_message_when_profile_is_updated(self):
-        User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
-        self.client.login(username='User123', password='SecretPass123')
-
         response = self.client.post(self.profile_url, data={'description': 'New Description'}, follow=True)
         self.assertContains(response, 'Your Profile has been updated successfully.')
 
     def test_context_contains_list_of_quizzes_created_by_user(self):
-        self.category = Category.objects.create(title='Category')
-        self.user1 = User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
-        self.user2 = User.objects.create_user('User124', 'addressemail124@gmail.com', 'SecretPass123')
-        self.quiz = Quiz.objects.create(title='Title', category=self.category, author=self.user1)
-        self.quiz = Quiz.objects.create(title='Other Quiz', category=self.category, author=self.user2)
-        self.question = Question.objects.create(question='Question', quiz=self.quiz)
-        self.client.login(username='User123', password='SecretPass123')
-
+        category = Category.objects.create(title='Category')
+        new_user = User.objects.create_user('User124', 'addressemail124@gmail.com', 'SecretPass123')
+        Quiz.objects.create(title='Title', category=category, author=self.user)
+        Quiz.objects.create(title='Other Quiz', category=category, author=new_user)
         response = self.client.get(self.profile_url)
         self.assertQuerysetEqual(response.context['quizzes'], ['<Quiz: Title>'])
+
+    def test_displays_appropriate_message_when_user_has_no_quizzes(self):
+        response = self.client.get(self.profile_url)
+        self.assertContains(response, "You have not created any quiz yet.")
