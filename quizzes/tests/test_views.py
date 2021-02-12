@@ -291,3 +291,53 @@ class TestUpdateQuizView(FormSetTestMixin, TestCase):
         self.client.post(reverse('quizzes:update', args=['title']), data=data)
         self.assertFalse(Quiz.objects.filter(title='Title').exists())
 
+
+class TestDeleteQuizView(TestCase):
+    login_url = reverse('accounts:login')
+    profile_url = reverse('accounts:profile')
+
+    @staticmethod
+    def get_delete_quiz_url(slug):
+        return reverse('quizzes:delete', args=[slug])
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.category = Category.objects.create(title='Category')
+        cls.user = User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
+
+    def setUp(self):
+        self.quiz = Quiz.objects.create(title='Title', category=self.category, author=self.user)
+        self.question = Question.objects.create(question='Question', quiz=self.quiz)
+        self.question.answers.add(Answer(answer='A', is_correct=False), bulk=False)
+        self.question.answers.add(Answer(answer='B', is_correct=False), bulk=False)
+        self.question.answers.add(Answer(answer='C', is_correct=False), bulk=False)
+        self.question.answers.add(Answer(answer='D', is_correct=True), bulk=False)
+
+        self.client.login(username='User123', password='SecretPass123')
+
+    def test_redirects_to_login_page_when_user_is_not_logged(self):
+        delete_quiz_url = self.get_delete_quiz_url('title')
+        self.client.logout()
+        response = self.client.get(delete_quiz_url)
+        self.assertRedirects(response, f'{self.login_url}?next={delete_quiz_url}')
+
+    def test_returns_403_when_not_author_is_trying_to_delete_quiz(self):
+        self.client.logout()
+        User.objects.create_user('User124', 'addressemail124@gmail.com', 'SecretPass123')
+        self.client.login(username='User124', password='SecretPass123')
+
+        response = self.client.get(self.get_delete_quiz_url('title'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_deletes_quiz(self):
+        self.client.post(self.get_delete_quiz_url('title'))
+        self.assertFalse(self.user.quizzes.exists())
+
+    def test_redirects_to_profile_page_when_quiz_is_deleted(self):
+        response = self.client.post(self.get_delete_quiz_url('title'))
+        self.assertRedirects(response, self.profile_url)
+
+    def test_displays_success_message_when_quiz_is_deleted(self):
+        response = self.client.post(self.get_delete_quiz_url('title'), follow=True)
+        self.assertContains(response, 'Your quiz has been deleted successfully')

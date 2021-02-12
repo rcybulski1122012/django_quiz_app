@@ -24,7 +24,13 @@ Profile
   <h2>Your quizzes</h2>
   <ul class="list-group">
     {% for quiz in quizzes %}
-      <li class="list-group-item"><a href="{% url 'quizzes:update' quiz.slug %}">{{ quiz.title }}</a></li>
+      <li class="list-group-item">
+        <span class="h3">
+          {{ quiz.title }}
+          <a href="{% url 'quizzes:delete' quiz.slug %}" class="btn btn-danger float-right">Delete</a>
+          <a href="{% url 'quizzes:update' quiz.slug %}" class="btn btn-primary float-right mr-2">Edit</a>
+        </span>
+      </li>
     {% empty %}
       <p>You have not created any quiz yet.</p>
     {% endfor %}

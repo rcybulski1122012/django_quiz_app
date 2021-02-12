@@ -1,7 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
+from django.views.generic import DeleteView
 
 from quizzes.forms import QuizForm, create_question_formset
 from quizzes.models import Quiz, Question
@@ -49,9 +52,9 @@ def get_number_of_questions(request):
 
 
 @login_required
-def update_quiz(request, quiz_slug):
+def update_quiz(request, slug):
     quiz = get_object_or_404(Quiz.objects.select_related('author').prefetch_related('questions__answers'),
-                             slug=quiz_slug)
+                             slug=slug)
     if quiz.author != request.user:
         raise PermissionDenied()
 
@@ -78,3 +81,20 @@ def update_quiz(request, quiz_slug):
 
     return render(request, 'quizzes/quiz/update.html', {'questions_formset': questions_formset,
                                                         'quiz_form': quiz_form, 'quiz': quiz})
+
+
+class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Quiz
+    success_url = reverse_lazy('accounts:profile')
+    template_name = 'quizzes/quiz/confirm_delete.html'
+    context_object_name = 'quiz'
+
+    def delete(self, request, **kwargs):
+        messages.success(request, 'Your quiz has been deleted successfully', extra_tags='alert alert-success')
+        return super().delete(request, **kwargs)
+
+    def get_object(self, **kwargs):
+        return self.model.objects.select_related('author').get(slug=self.kwargs['slug'])
+
+    def test_func(self):
+        return self.get_object().author == self.request.user
