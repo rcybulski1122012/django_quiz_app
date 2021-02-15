@@ -2,11 +2,12 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
+from django.forms import formset_factory
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 
-from quizzes.forms import QuizForm, create_question_formset
+from quizzes.forms import QuizForm, create_question_formset, TakeQuestionForm, BaseTakeQuizFormSet
 from quizzes.models import Quiz, Question
 
 
@@ -98,3 +99,22 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.get_object().author == self.request.user
+
+
+def take_quiz(request, slug):
+    quiz = get_object_or_404(Quiz.objects.select_related('author').prefetch_related('questions__answers'), slug=slug)
+    number_of_questions = quiz.questions.count()
+    TakeQuizFormset = formset_factory(TakeQuestionForm, extra=number_of_questions, formset=BaseTakeQuizFormSet)
+
+    if request.method == 'POST':
+        formset = TakeQuizFormset(data=request.POST, quiz=quiz)
+        if formset.is_valid():
+            score = formset.get_score()
+            score_percentage = int(score / number_of_questions * 100)
+            return render(request, 'quizzes/quiz/score.html', {'quiz': quiz, 'score': score,
+                                                               'score_percentage': score_percentage})
+    else:
+        formset = TakeQuizFormset(quiz=quiz)
+
+    return render(request, 'quizzes/quiz/take.html', {'formset': formset, 'quiz': quiz})
+

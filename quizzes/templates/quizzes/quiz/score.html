@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ quiz.title }}
+{% endblock %}
+
+{% block content %}
+<p class="h2">Congratulations! You got {{ score_percentage }}% ({{ score }}/{{ quiz.questions.count }})</p>
+<a href="{% url 'quizzes:take' quiz.slug %}">Try one more time</a><br>
+<a href="#">Back to the quizzes list</a>
+{% endblock %}

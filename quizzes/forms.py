@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.forms import BaseInlineFormSet, inlineformset_factory, BaseFormSet
 
 from quizzes.models import Quiz, Question, Answer
 
@@ -81,3 +81,30 @@ def create_question_formset(number_of_questions, can_delete=False):
                                  widgets={'question': forms.Textarea(attrs={'cols': 20, 'rows': 2})},
                                  extra=number_of_questions, max_num=number_of_questions,
                                  min_num=number_of_questions, can_delete=can_delete)
+
+
+class TakeQuestionForm(forms.Form):
+    answer = forms.ModelChoiceField(queryset=None, widget=forms.RadioSelect)
+
+    def set_question(self, question):
+        self.fields['answer'].queryset = question.answers
+        self.fields['answer'].label = question.question
+
+
+class BaseTakeQuizFormSet(BaseFormSet):
+    def __init__(self, *args, **kwargs):
+        quiz = kwargs.pop('quiz')
+        super().__init__(*args, **kwargs)
+        for form, question in zip(self.forms, quiz.questions.all()):
+            form.set_question(question)
+
+    def get_score(self):
+        score = 0
+        for form in self.forms:
+            cd = form.cleaned_data
+            try:
+                if cd['answer'].is_correct:
+                    score += 1
+            except KeyError:
+                pass
+        return score

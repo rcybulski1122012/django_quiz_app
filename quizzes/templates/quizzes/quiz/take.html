@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+{{ quiz.title }}
+{% endblock %}
+
+{% block content %}
+<h2>{{ quiz.title }}</h2>
+<form method="post">
+  {{ formset|crispy }}
+  {{ formset.management_form }}
+  {% csrf_token %}
+  <input type="submit" value="Check your answers" class="btn btn-primary">
+</form>
+{{ result }}
+{% endblock %}
