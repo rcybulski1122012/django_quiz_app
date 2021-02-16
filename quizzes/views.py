@@ -11,6 +11,11 @@ from quizzes.forms import QuizForm, create_question_formset, TakeQuestionForm, B
 from quizzes.models import Quiz, Question
 
 
+QUIZ_CREATE_SUCCESS_MESSAGE = 'Your quiz has been created successfully'
+QUIZ_UPDATE_SUCCESS_MESSAGE = 'Your quiz has been updated successfully'
+QUIZ_DELETE_SUCCESS_MESSAGE = 'Your quiz has been deleted successfully'
+
+
 @login_required
 def create_quiz(request):
     number_of_questions = get_number_of_questions(request)
@@ -24,7 +29,7 @@ def create_quiz(request):
             if questions_formset.is_valid():
                 quiz.save()
                 questions_formset.save()
-                messages.success(request, 'Your quiz has been created successfully', extra_tags='alert alert-success')
+                messages.success(request, QUIZ_CREATE_SUCCESS_MESSAGE, extra_tags='alert alert-success')
                 return redirect('accounts:profile')
         else:
             questions_formset = QuestionsFormSet(request.POST)
@@ -74,7 +79,7 @@ def update_quiz(request, slug):
             questions_formset.save()
             if not Question.objects.filter(quiz=quiz).exists():
                 quiz.delete()
-            messages.success(request, 'Your quiz has been updated successfully', extra_tags='alert alert-success')
+            messages.success(request, QUIZ_UPDATE_SUCCESS_MESSAGE, extra_tags='alert alert-success')
             return redirect('accounts:profile')
     else:
         quiz_form = QuizForm(instance=quiz)
@@ -91,7 +96,7 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     context_object_name = 'quiz'
 
     def delete(self, request, **kwargs):
-        messages.success(request, 'Your quiz has been deleted successfully', extra_tags='alert alert-success')
+        messages.success(request, QUIZ_DELETE_SUCCESS_MESSAGE, extra_tags='alert alert-success')
         return super().delete(request, **kwargs)
 
     def get_object(self, **kwargs):
