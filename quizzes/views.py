@@ -100,7 +100,7 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return super().delete(request, **kwargs)
 
     def get_object(self, **kwargs):
-        return self.model.objects.select_related('author').get(slug=self.kwargs['slug'])
+        return get_object_or_404(self.model.objects.select_related('author'), slug=self.kwargs['slug'])
 
     def test_func(self):
         return self.get_object().author == self.request.user
@@ -122,4 +122,3 @@ def take_quiz(request, slug):
         formset = TakeQuizFormset(quiz=quiz)
 
     return render(request, 'quizzes/quiz/take.html', {'formset': formset, 'quiz': quiz})
-

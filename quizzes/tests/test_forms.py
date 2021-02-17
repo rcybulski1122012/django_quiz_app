@@ -1,8 +1,10 @@
 from django.contrib.auth.models import User
+from django.forms import formset_factory
 from django.test import TestCase
 
-from quizzes.forms import QuizForm, AnswerFormSet, create_question_formset
+from quizzes.forms import QuizForm, AnswerFormSet, create_question_formset, TakeQuestionForm, BaseTakeQuizFormSet
 from quizzes.models import Category, Quiz, Question, Answer
+from quizzes.tests.utils import QuizzesUtilsMixin
 
 QuestionFormSet = create_question_formset(number_of_questions=1)
 
@@ -122,3 +124,52 @@ class TestQuestionFormSet(TestCase):
         questions = formset.save()
         self.assertTrue(Question.objects.filter(quiz=quiz).exists())
         self.assertTrue(Answer.objects.filter(question=questions[0]).exists())
+
+
+class TestTakeQuizFormSet(QuizzesUtilsMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.category = cls.create_category()
+        cls.user = cls.create_user()
+
+    def setUp(self):
+        self.quiz = self.create_quiz()
+        self.question = self.create_question()
+        self.TakeQuizFormset = formset_factory(TakeQuestionForm, extra=self.question.answers.count(),
+                                               formset=BaseTakeQuizFormSet)
+
+    def get_formset_data(self, is_correct=True):
+        answer_index = 3 if is_correct else 0  # D answer is correct
+        data = {
+            'form-TOTAL_FORMS': 1,
+            'form-INITIAL_FORMS': 0,
+            'form-0-answer': self.question.answers.all()[answer_index].pk
+        }
+        return data
+
+    def test_get_score_when_answers_are_correct(self):
+        formset = self.TakeQuizFormset(quiz=self.quiz, data=self.get_formset_data())
+        formset.is_valid()
+        score = formset.get_score()
+        self.assertEqual(score, 1)
+
+    def test_get_score_when_answers_are_incorrect(self):
+        formset = self.TakeQuizFormset(quiz=self.quiz, data=self.get_formset_data(is_correct=False))
+        formset.is_valid()
+        score = formset.get_score()
+        self.assertEqual(score, 0)
+
+    def test_get_score_when_answers_are_not_given(self):
+        formset = self.TakeQuizFormset(quiz=self.quiz, data={'form-TOTAL_FORMS': 1, 'form-INITIAL_FORMS': 0})
+        formset.is_valid()
+        score = formset.get_score()
+        self.assertEqual(score, 0)
+
+    def test_questions_labels(self):
+        formset = self.TakeQuizFormset(quiz=self.quiz)
+        formset.is_valid()
+        formset_labels = {label for form in formset.forms if (label := form.fields['answer'].label)}
+        questions_titles = {question.question for question in self.quiz.questions.all()}
+        self.assertEqual(formset_labels, questions_titles)
+

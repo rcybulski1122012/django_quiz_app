@@ -28,6 +28,10 @@ class QuizzesUtilsMixin:
     def get_delete_quiz_url(slug):
         return reverse('quizzes:delete', args=[slug])
 
+    @staticmethod
+    def get_take_quiz_url(slug):
+        return reverse('quizzes:take', args=[slug])
+
     USERNAME = 'Username123'
     EMAIL = 'addressemail123@gmail.com'
     PASSWORD = 'SecretPass123'
@@ -71,7 +75,6 @@ class QuizzesUtilsMixin:
                                                 thumbnail='', question_body=QUESTION_BODY, answer_a='A',
                                                 answer_b='B', answer_c='C', answer_d='D', follow=True,
                                                 answer_d_is_correct='on'):
-        # TODO: check that thumbnail value could be None instead of empty str
         category = category or self.category.id
 
         # Always fourth answer is correct!

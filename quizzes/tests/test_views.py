@@ -147,6 +147,10 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
 
         self.assertRedirects(response, f'{self.login_url}?next={update_quiz_url}')
 
+    def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
+        response = self.client.get(self.get_update_quiz_url('does-not-exists'))
+        self.assertEqual(response.status_code, 404)
+
     def test_returns_403_when_not_author_is_trying_to_update_quiz(self):
         self.client.logout()
         User.objects.create_user('User124', 'addressemail124@gmail.com', 'SecretPass123')
@@ -261,6 +265,10 @@ class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):
         self.question = self.create_question()
         self.client.login(username=self.USERNAME, password=self.PASSWORD)
 
+    def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
+        response = self.client.get(self.get_delete_quiz_url('does-not-exists'))
+        self.assertEqual(response.status_code, 404)
+
     def test_redirects_to_login_page_when_user_is_not_logged(self):
         delete_quiz_url = self.get_delete_quiz_url(self.QUIZ_SLUG)
         self.client.logout()
@@ -286,3 +294,46 @@ class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):
     def test_displays_success_message_when_quiz_is_deleted(self):
         response = self.client.post(self.get_delete_quiz_url(self.QUIZ_SLUG), follow=True)
         self.assertContains(response, QUIZ_DELETE_SUCCESS_MESSAGE)
+
+
+class TestTakeQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.category = cls.create_category()
+        cls.user = cls.create_user()
+
+    def setUp(self):
+        self.quiz = self.create_quiz()
+        self.question = self.create_question()
+        self.client.login(username=self.USERNAME, password=self.PASSWORD)
+
+    def get_form_data(self, is_correct=True):
+        answer_index = 3 if is_correct else 0   # D answer is correct
+        data = {
+            'form-TOTAL_FORMS': 1,
+            'form-INITIAL_FORMS': 0,
+            'form-0-answer': self.question.answers.all()[answer_index].pk
+        }
+        return data
+
+    def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
+        response = self.client.get(self.get_take_quiz_url('does-not-exists'))
+        self.assertEqual(response.status_code, 404)
+
+    def test_renders_forms_with_proper_number_of_questions(self):
+        response = self.client.get(self.get_take_quiz_url(self.QUIZ_SLUG))
+        self.assertFormsetNumberOfFormsEqual(response.context['formset'], self.quiz.questions.count())
+
+    def test_displays_score_when_answers_are_correct(self):
+        response = self.client.post(self.get_take_quiz_url(self.QUIZ_SLUG), data=self.get_form_data())
+        self.assertContains(response, 'Congratulations! You got 100% (1/1)')
+
+    def test_displays_score_when_answers_are_incorrect(self):
+        response = self.client.post(self.get_take_quiz_url(self.QUIZ_SLUG), data=self.get_form_data(is_correct=False))
+        self.assertContains(response, 'Congratulations! You got 0% (0/1)')
+
+    def test_display_score_when_answers_are_not_checked(self):
+        data = {'form-TOTAL_FORMS': 1, 'form-INITIAL_FORMS': 0}
+        response = self.client.post(self.get_take_quiz_url(self.QUIZ_SLUG), data=data)
+        self.assertContains(response, 'Congratulations! You got 0% (0/1)')
