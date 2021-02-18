@@ -137,7 +137,9 @@ MEDIA_URL = '/media/'
 
 THUMBNAIL_ALIASES = {
     '': {
-        'avatar': {'size': (50, 50), 'crop': True},
+        'avatar': {'size': (70, 70), 'crop': True},
+        'avatar_thumbnail': {'size': (40, 40), 'crop': True},
+        'quiz_thumbnail': {'size': (300, 170), 'crop': True},
     },
 }
 

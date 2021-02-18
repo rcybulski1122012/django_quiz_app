@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.forms import formset_factory
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import DeleteView
+from django.views.generic import DeleteView, ListView
 
 from quizzes.forms import QuizForm, create_question_formset, TakeQuestionForm, BaseTakeQuizFormSet
 from quizzes.models import Quiz, Question
@@ -122,3 +122,10 @@ def take_quiz(request, slug):
         formset = TakeQuizFormset(quiz=quiz)
 
     return render(request, 'quizzes/quiz/take.html', {'formset': formset, 'quiz': quiz})
+
+
+class QuizzesListView(ListView):
+    model = Quiz
+    template_name = 'quizzes/quiz/list.html'
+    paginate_by = 9
+    context_object_name = 'quizzes'

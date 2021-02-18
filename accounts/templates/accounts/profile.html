@@ -7,7 +7,9 @@ Profile
 {% endblock %}
 
 {% block content %}
-<h1><img src="{{ request.user.profile.photo|thumbnail_url:'avatar' }}" alt="profile photo"> Your profile</h1>
+<h1><img src="{{ request.user.profile.photo|thumbnail_url:'avatar' }}" alt="profile photo">
+  <span style="vertical-align: bottom;">Your profile</span>
+</h1>
 <p class="mt-4">
   Username: <strong>{{ request.user.username }}</strong><br>
   Email: <strong> {{ request.user.email }}</strong>

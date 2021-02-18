@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
 
@@ -36,6 +37,9 @@ class Quiz(models.Model):
 
     def __repr__(self):
         return f'<Quiz: {self.title}>'
+
+    def get_absolute_url(self):
+        return reverse('quizzes:take', args=[self.slug])
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)
