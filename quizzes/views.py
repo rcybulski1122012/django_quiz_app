@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, ListView
 
-from quizzes.forms import QuizForm, create_question_formset, TakeQuestionForm, BaseTakeQuizFormSet
+from quizzes.forms import QuizForm, create_question_formset, TakeQuestionForm, BaseTakeQuizFormSet, FilterQuizzesForm
 from quizzes.models import Quiz, Question
 
 
@@ -127,5 +127,29 @@ def take_quiz(request, slug):
 class QuizzesListView(ListView):
     model = Quiz
     template_name = 'quizzes/quiz/list.html'
-    paginate_by = 9
+    paginate_by = 1
     context_object_name = 'quizzes'
+
+    def dispatch(self, *args, **kwargs):
+        self.author_username = self.request.GET.get('author', None)
+        self.category_slug = self.request.GET.get('category', None)
+
+        return super().dispatch(*args, **kwargs)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.author_username:
+            qs = qs.filter(author__username=self.author_username)
+        if self.category_slug:
+            qs = qs.filter(category__slug=self.category_slug)
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context['author_username'] = self.author_username or ''
+        context['category_slug'] = self.category_slug or ''
+        context['filter_form'] = FilterQuizzesForm()
+
+        return context
+

@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import BaseInlineFormSet, inlineformset_factory, BaseFormSet
 
-from quizzes.models import Quiz, Question, Answer
+from quizzes.models import Quiz, Question, Answer, Category
 
 SAME_QUIZ_TITLE_ERROR = 'Quiz with the same title already exists!'
 ALL_ANSWERS_INCORRECT_ERROR = 'At least one of the answers must be marked as correct!'
@@ -108,3 +108,9 @@ class BaseTakeQuizFormSet(BaseFormSet):
             except KeyError:
                 pass
         return score
+
+
+class FilterQuizzesForm(forms.Form):
+    author = forms.CharField(required=False)
+    category = forms.ChoiceField(choices=[
+        (category.slug, category.slug.capitalize()) for category in Category.objects.all()])

@@ -1,22 +1,18 @@
 {% extends 'base.html' %}
 {% load thumbnail %}
+{% load crispy_forms_tags %}
 
 {% block title %}
-{% if category %}
-  '{{ category|capfirst }}' quizzes
-{% else %}
-  All quizzes
-{% endif %}
+Quizzes list
 {% endblock %}
 
 {% block content %}
-<h2>
-  {% if category %}
-    '{{ category|capfirst }}' quizzes
-  {% else %}
-    All quizzes
-  {% endif %}
-</h2>
+<h2>Quizzes list</h2>
+<hr>
+<form>
+  {{ filter_form|crispy }}
+  <input type="submit" value="Filter" class="btn btn-outline-primary">
+</form>
 <hr>
 <div class="row justify-content-center">
   {% for quiz in quizzes %}
@@ -40,7 +36,8 @@
   <ul class="pagination">
     {% if page_obj.has_previous %}
       <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.number|add:'-1' }}">
+        <a class="page-link"
+           href="?page={{ page_obj.number|add:'-1' }}&author={{ author_username }}&category={{ category_slug }}">
           <span aria-hidden="true">&laquo;</span>
         </a>
       </li>
@@ -48,14 +45,16 @@
     <!-- TODO: start here only 3 below and 3 over-->
     {% for page_num in page_obj.paginator.page_range %}
       {% if page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
-      <li class="page-item {% if page_obj.number ==  page_num %}active{% endif %}"><a class="page-link" href="?page={{ page_num }}">
+      <li class="page-item {% if page_obj.number ==  page_num %}active{% endif %}">
+        <a class="page-link" href="?page={{ page_num }}&author={{ author_username }}&category={{ category_slug }}">
         {{ page_num }}</a></li>
       {% endif %}
     {% endfor %}
 
     {% if page_obj.has_next %}
       <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.number|add:'1' }}">
+        <a class="page-link"
+           href="?page={{ page_obj.number|add:'1' }}&author={{ author_username }}&category={{ category_slug }}">
           <span aria-hidden="true">&raquo;</span>
         </a>
       </li>
