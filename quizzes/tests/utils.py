@@ -17,12 +17,8 @@ class QuizzesUtilsMixin:
     create_quiz_url = reverse('quizzes:create')
 
     @staticmethod
-    def get_update_quiz_url(slug, questions=None):
-        url = reverse('quizzes:update', args=[slug])
-        if questions is None:
-            return url
-        else:
-            return f'{url}?questions={questions}'
+    def get_update_quiz_url(slug, questions=''):
+        return f'{reverse("quizzes:update", args=[slug])}?questions={questions}'
 
     @staticmethod
     def get_delete_quiz_url(slug):
@@ -31,6 +27,10 @@ class QuizzesUtilsMixin:
     @staticmethod
     def get_take_quiz_url(slug):
         return reverse('quizzes:take', args=[slug])
+
+    @staticmethod
+    def get_list_url(page='', author_username='', category_slug=''):
+        return f'{reverse("quizzes:list")}?page={page}&author={author_username}&category={category_slug}'
 
     USERNAME = 'Username123'
     EMAIL = 'addressemail123@gmail.com'
@@ -89,4 +89,3 @@ class QuizzesUtilsMixin:
                 }
 
         return self.client.post(f'{self.create_quiz_url}?questions=1', data=data, follow=follow)
-

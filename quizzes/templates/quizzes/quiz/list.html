@@ -27,7 +27,7 @@ Quizzes list
       </div>
     </div>
   {% empty %}
-    <p>There are no quizzes yet.</p>
+    <p>There are no quizzes that matches your filters.</p>
   {% endfor %}
 </div>
 
@@ -42,7 +42,6 @@ Quizzes list
         </a>
       </li>
     {% endif %}
-    <!-- TODO: start here only 3 below and 3 over-->
     {% for page_num in page_obj.paginator.page_range %}
       {% if page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
       <li class="page-item {% if page_obj.number ==  page_num %}active{% endif %}">

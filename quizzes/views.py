@@ -127,7 +127,7 @@ def take_quiz(request, slug):
 class QuizzesListView(ListView):
     model = Quiz
     template_name = 'quizzes/quiz/list.html'
-    paginate_by = 1
+    paginate_by = 9
     context_object_name = 'quizzes'
 
     def dispatch(self, *args, **kwargs):
@@ -152,4 +152,3 @@ class QuizzesListView(ListView):
         context['filter_form'] = FilterQuizzesForm()
 
         return context
-

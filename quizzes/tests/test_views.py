@@ -1,12 +1,13 @@
 from os import path
 from shutil import rmtree
+from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
 from quizzes.models import Quiz, Question
-from quizzes.forms import SAME_QUIZ_TITLE_ERROR, ALL_ANSWERS_INCORRECT_ERROR
+from quizzes.forms import SAME_QUIZ_TITLE_ERROR, ALL_ANSWERS_INCORRECT_ERROR, FilterQuizzesForm
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
 from quizzes.views import (
     QUIZ_CREATE_SUCCESS_MESSAGE,
@@ -337,3 +338,76 @@ class TestTakeQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         data = {'form-TOTAL_FORMS': 1, 'form-INITIAL_FORMS': 0}
         response = self.client.post(self.get_take_quiz_url(self.QUIZ_SLUG), data=data)
         self.assertContains(response, 'Congratulations! You got 0% (0/1)')
+
+
+class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.category1 = cls.create_category(title='Category1')
+        cls.category2 = cls.create_category(title='Category2')
+        cls.user1 = cls.create_user(username='User1', email='addressemail1@gmail.com')
+        cls.user2 = cls.create_user(username='User2', email='addressemail2@gmail.com')
+
+    def setUp(self):
+        self.quiz1 = self.create_quiz(title='Quiz1', user=self.user1, category=self.category1)
+        self.quiz2 = self.create_quiz(title='Quiz2', user=self.user2, category=self.category2)
+        self.quiz3 = self.create_quiz(title='Quiz3', user=self.user1, category=self.category2)
+
+    def test_context_contains_author_username_and_category_slug(self):
+        response = self.client.get(self.get_list_url(
+            author_username=self.user1.username, category_slug=self.category1.slug))
+        self.assertEqual(response.context['author_username'], self.user1.username)
+        self.assertEqual(response.context['category_slug'], self.category1.slug)
+
+    def test_context_contains_FilterQuizzesForm(self):
+        response = self.client.get(self.get_list_url())
+        form = response.context['filter_form']
+        self.assertTrue(isinstance(form, FilterQuizzesForm))
+
+    def test_displays_all_quizzes_when_no_filters(self):
+        # Number of quizzes that were created in test case is 3
+        # and the pagination of view is 9 so it should display all quizzes
+        response = self.client.get(self.get_list_url())
+        expected_qs = [repr(quiz) for quiz in Quiz.objects.all()]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs)
+
+    def test_filter_by_username(self):
+        response = self.client.get(self.get_list_url(author_username=self.user1.username))
+        expected_qs = [repr(quiz) for quiz in Quiz.objects.filter(author__username=self.user1.username)]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs)
+
+    def test_filter_by_category(self):
+        response = self.client.get(self.get_list_url(category_slug=self.category1.slug))
+        expected_qs = [repr(quiz) for quiz in Quiz.objects.filter(category__slug=self.category1.slug)]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs)
+
+    def test_both_filters(self):
+        response = self.client.get(self.get_list_url(
+            author_username=self.user1.username, category_slug=self.category2.slug))
+        expected_qs = [repr(quiz) for quiz in Quiz.objects.filter(
+            author__username=self.user1.username, category__slug=self.category2.slug)]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs, ordered=False)
+
+    def test_displays_appropriate_message_when_there_are_no_quizzes_that_matches_the_filters(self):
+        response = self.client.get(self.get_list_url(author_username='user-that-does-not-exists'))
+        self.assertContains(response, 'There are no quizzes that matches your filters.')
+
+    @patch('quizzes.views.QuizzesListView.paginate_by', 1)
+    def test_pagination_when_page_number_is_proper(self):
+        response = self.client.get(self.get_list_url(page=1))
+        expected_qs = [repr(self.quiz1)]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs)
+
+        response = self.client.get(self.get_list_url(page=2))
+        expected_qs = [repr(self.quiz2)]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs)
+
+        response = self.client.get(self.get_list_url(page=3))
+        expected_qs = [repr(self.quiz3)]
+        self.assertQuerysetEqual(response.context['quizzes'], expected_qs)
+
+    def test_pagination_returns_404_when_page_number_is_greater_than_total_number_of_pages(self):
+        response = self.client.get(self.get_list_url(page=4))
+        self.assertEqual(response.status_code, 404)
+
