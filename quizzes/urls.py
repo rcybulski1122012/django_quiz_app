@@ -9,4 +9,5 @@ urlpatterns = [
     path('delete/<slug:slug>/', views.DeleteQuizView.as_view(), name='delete'),
     path('take/<slug:slug>/', views.take_quiz, name='take'),
     path('list/', views.QuizzesListView.as_view(), name='list'),
+    path('detail/<slug:slug>/', views.QuizDetailView.as_view(), name='detail'),
 ]

@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.forms import formset_factory
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import DeleteView, ListView
+from django.views.generic import DeleteView, ListView, DetailView
 
 from quizzes.forms import QuizForm, create_question_formset, TakeQuestionForm, BaseTakeQuizFormSet, FilterQuizzesForm
 from quizzes.models import Quiz, Question
@@ -152,3 +152,12 @@ class QuizzesListView(ListView):
         context['filter_form'] = FilterQuizzesForm()
 
         return context
+
+
+class QuizDetailView(DetailView):
+    model = Quiz
+    template_name = 'quizzes/quiz/detail.html'
+    context_object_name = 'quiz'
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('author__profile')

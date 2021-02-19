@@ -7,7 +7,7 @@ Profile
 {% endblock %}
 
 {% block content %}
-<h1><img src="{{ request.user.profile.photo|thumbnail_url:'avatar' }}" alt="profile photo">
+<h1><img src="{{ request.user.profile.photo|thumbnail_url:'avatar' }}" alt="profile photo" class="rounded-circle">
   <span style="vertical-align: bottom;">Your profile</span>
 </h1>
 <p class="mt-4">

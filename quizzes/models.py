@@ -40,7 +40,7 @@ class Quiz(models.Model):
         return f'<Quiz: {self.title}>'
 
     def get_absolute_url(self):
-        return reverse('quizzes:take', args=[self.slug])
+        return reverse('quizzes:detail', args=[self.slug])
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)

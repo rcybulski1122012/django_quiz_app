@@ -22,7 +22,8 @@ Quizzes list
         <div class="card-body">
           <h5 class="card-title">{{ quiz.title }}</h5>
           <p class="card-text" style="height: 3em;">{{ quiz.description|truncatechars:50 }}</p>
-          <a href="{{ quiz.get_absolute_url }}" class="btn btn-primary">Take the quiz</a>
+          <a href="{% url 'quizzes:take' quiz.slug %}" class="btn btn-primary">Take the quiz</a>
+          <a href="{{ quiz.get_absolute_url }}" class="btn btn-outline-primary">More info</a>
         </div>
       </div>
     </div>
