@@ -59,7 +59,7 @@ def get_number_of_questions(request):
 
 @login_required
 def update_quiz(request, slug):
-    quiz = get_object_or_404(Quiz.objects.select_related('author').prefetch_related('questions__answers'),
+    quiz = get_object_or_404(Quiz.objects.prefetch_related('questions__answers').select_related('author'),
                              slug=slug)
     if quiz.author != request.user:
         raise PermissionDenied()
@@ -107,7 +107,7 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 def take_quiz(request, slug):
-    quiz = get_object_or_404(Quiz.objects.select_related('author').prefetch_related('questions__answers'), slug=slug)
+    quiz = get_object_or_404(Quiz.objects.prefetch_related('questions__answers').select_related('author'), slug=slug)
     number_of_questions = quiz.questions.count()
     TakeQuizFormset = formset_factory(TakeQuestionForm, extra=number_of_questions, formset=BaseTakeQuizFormSet)
 
@@ -160,4 +160,4 @@ class QuizDetailView(DetailView):
     context_object_name = 'quiz'
 
     def get_queryset(self):
-        return super().get_queryset().select_related('author__profile')
+        return super().get_queryset().select_related('author__profile', 'category')

@@ -32,6 +32,10 @@ class QuizzesUtilsMixin:
     def get_list_url(page='', author_username='', category_slug=''):
         return f'{reverse("quizzes:list")}?page={page}&author={author_username}&category={category_slug}'
 
+    @staticmethod
+    def get_quiz_detail_url(slug):
+        return reverse('quizzes:detail', args=[slug])
+
     USERNAME = 'Username123'
     EMAIL = 'addressemail123@gmail.com'
     PASSWORD = 'SecretPass123'
@@ -50,10 +54,10 @@ class QuizzesUtilsMixin:
     def create_category(title=CATEGORY_TITLE):
         return Category.objects.create(title=title)
 
-    def create_quiz(self, title=QUIZ_TITLE, user=None, category=None):
+    def create_quiz(self, title=QUIZ_TITLE, user=None, category=None, description=QUIZ_DESC):
         user = user or self.user
         category = category or self.category
-        return Quiz.objects.create(title=title, author=user, category=category)
+        return Quiz.objects.create(title=title, author=user, category=category, description=description)
 
     def create_question(self, quiz=None, question_body=None):
         quiz = quiz or self.quiz

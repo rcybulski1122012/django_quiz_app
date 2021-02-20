@@ -149,7 +149,7 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         self.assertRedirects(response, f'{self.login_url}?next={update_quiz_url}')
 
     def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
-        response = self.client.get(self.get_update_quiz_url('does-not-exists'))
+        response = self.client.get(self.get_update_quiz_url('does-not-exist'))
         self.assertEqual(response.status_code, 404)
 
     def test_returns_403_when_not_author_is_trying_to_update_quiz(self):
@@ -267,7 +267,7 @@ class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):
         self.client.login(username=self.USERNAME, password=self.PASSWORD)
 
     def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
-        response = self.client.get(self.get_delete_quiz_url('does-not-exists'))
+        response = self.client.get(self.get_delete_quiz_url('does-not-exist'))
         self.assertEqual(response.status_code, 404)
 
     def test_redirects_to_login_page_when_user_is_not_logged(self):
@@ -319,7 +319,7 @@ class TestTakeQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         return data
 
     def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
-        response = self.client.get(self.get_take_quiz_url('does-not-exists'))
+        response = self.client.get(self.get_take_quiz_url('does-not-exist'))
         self.assertEqual(response.status_code, 404)
 
     def test_renders_forms_with_proper_number_of_questions(self):
@@ -411,3 +411,28 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
         response = self.client.get(self.get_list_url(page=4))
         self.assertEqual(response.status_code, 404)
 
+
+class TestQuizDetailView(QuizzesUtilsMixin, TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.category = cls.create_category()
+        cls.user = cls.create_user()
+
+    def setUp(self):
+        self.quiz = self.create_quiz()
+        self.question = self.create_question()
+
+    def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
+        response = self.client.get(self.get_quiz_detail_url('does-not-exist'))
+        self.assertEqual(response.status_code, 404)
+
+    def test_displays_data_for_given_quiz(self):
+        response = self.client.get(self.get_quiz_detail_url(self.QUIZ_SLUG))
+        self.assertContains(response, self.category.title)
+        self.assertContains(response, self.user.username)
+        self.assertContains(response, self.QUIZ_DESC)
+
+    def test_executes_only_one_query(self):
+        with self.assertNumQueries(1):
+            self.client.get(self.get_quiz_detail_url(self.QUIZ_SLUG))
