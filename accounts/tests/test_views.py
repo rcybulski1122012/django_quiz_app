@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.views import ACCOUNT_CREATE_SUCCESS_MESSAGE, PROFILE_UPDATE_SUCCESS_MESSAGE
 from accounts.forms import SAME_EMAIL_ERROR
 from accounts.models import Profile
 from quizzes.models import Category, Quiz
@@ -36,7 +37,7 @@ class TestRegisterView(TestCase):
     def test_displays_success_message_when_given_data_is_correct(self):
         data = self.get_example_user_data()
         response = self.client.post(self.register_url, data, follow=True)
-        self.assertContains(response, 'Your account has been created successfully.')
+        self.assertContains(response, ACCOUNT_CREATE_SUCCESS_MESSAGE)
 
     def test_displays_error_message_when_given_data_is_incorrect(self):
         User.objects.create_user('User123', 'addressemail123@gmail.com', 'SecretPass123')
@@ -81,7 +82,7 @@ class TestProfileView(TestCase):
 
     def test_displays_success_message_when_profile_is_updated(self):
         response = self.client.post(self.profile_url, data={'description': 'New Description'}, follow=True)
-        self.assertContains(response, 'Your Profile has been updated successfully.')
+        self.assertContains(response, PROFILE_UPDATE_SUCCESS_MESSAGE)
 
     def test_context_contains_list_of_quizzes_created_by_user(self):
         category = Category.objects.create(title='Category')

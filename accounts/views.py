@@ -1,35 +1,43 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, UpdateView
 
-from accounts.forms import UserRegistrationForm, ProfileEditForm
-from quizzes.models import Quiz
+from accounts.forms import UserRegistrationForm
+from accounts.models import Profile
 
+User = get_user_model()
 
-def register(request):
-    if request.method == 'POST':
-        form = UserRegistrationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your account has been created successfully.', extra_tags='alert alert-success')
-            return redirect('home')
-    else:
-        form = UserRegistrationForm()
-
-    return render(request, 'accounts/register.html', {'form': form})
+ACCOUNT_CREATE_SUCCESS_MESSAGE = 'Your account has been created successfully.'
+PROFILE_UPDATE_SUCCESS_MESSAGE = 'Your Profile has been updated successfully.'
 
 
-@login_required
-def profile(request):
-    user = request.user
-    quizzes = Quiz.objects.filter(author=user)
+class RegisterView(CreateView):
+    model = User
+    template_name = 'accounts/register.html'
+    form_class = UserRegistrationForm
+    success_url = reverse_lazy('home')
 
-    if request.method == 'POST':
-        form = ProfileEditForm(request.POST, request.FILES, instance=user.profile)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Your Profile has been updated successfully.', extra_tags='alert alert-success')
-    else:
-        form = ProfileEditForm(instance=user.profile)
+    def form_valid(self, form):
+        messages.success(self.request, ACCOUNT_CREATE_SUCCESS_MESSAGE, extra_tags='alert alert-success')
+        return super().form_valid(form)
 
-    return render(request, 'accounts/profile.html', {'form': form, 'quizzes': quizzes})
+
+class ProfileView(LoginRequiredMixin, UpdateView):
+    model = Profile
+    fields = ['description', 'photo']
+    template_name = 'accounts/profile.html'
+    success_url = reverse_lazy('accounts:profile')
+
+    def get_object(self, **kwargs):
+        return self.request.user.profile
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['quizzes'] = self.request.user.quizzes.all()
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, PROFILE_UPDATE_SUCCESS_MESSAGE, extra_tags='alert alert-success')
+        return super().form_valid(form)

@@ -2,7 +2,6 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from accounts.models import Profile
 
 SAME_EMAIL_ERROR = 'An account with the same email already exists!'
 
@@ -29,13 +28,3 @@ class UserRegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
-
-
-class ProfileEditForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = ['description', 'photo']
-
-    def __init__(self, *args, **kwargs):
-        super(ProfileEditForm, self).__init__(*args, **kwargs)
-        self.fields['description'].help_text = 'Up to 500 characters.'
