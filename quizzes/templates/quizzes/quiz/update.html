@@ -19,7 +19,7 @@ Update "{{ quiz.title }}"
   {{ quiz_form|crispy }}
   {{ questions_formset.management_form }}
 
-  {% if questions_formset.total_error_count %}
+  {% if questions_formset.non_form_errors %}
     <div class="alert alert-block alert-danger pb-0">
       {{ questions_formset.non_form_errors }}
     </div>
