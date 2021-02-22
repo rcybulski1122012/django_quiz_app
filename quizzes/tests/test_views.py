@@ -210,35 +210,34 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
         self.assertContains(response, SAME_QUIZ_TITLE_ERROR)
 
-    def test_display_default_quantity_of_question_forms_when_number_of_questions_is_smaller(self):
+    def test_displays_the_same_number_of_forms_as_quiz_questions_when_number_is_not_given(self):
         response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG))
-        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 10)
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], number_of_questions)
 
-    def test_displays_given_quantity_of_questions_forms_when_it_is_greater_than_number_of_questions(self):
-        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions=12))
-        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 12)
+    def test_displays_the_same_number_of_forms_as_quiz_questions_when_given_number_is_smaller(self):
+        self.create_question(quiz=self.quiz)
+        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions=1))
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], number_of_questions)
+
+    def test_displays_given_quantity_of_questions_forms_when_it_is_greater_than_number_of_quiz_questions(self):
+        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions=5))
+        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 5)
 
     def test_displays_maximum_quantity_of_question_forms_when_given_number_is_greater_than_max(self):
         response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions=25))
         self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 20)
 
-    def test_displays_default_quantity_of_question_forms_when_given_number_is_smaller_than_min(self):
+    def test_displays_the_same_number_of_forms_as_quiz_questions_when_given_number_is_smaller_than_min(self):
         response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions=-5))
-        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 10)
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], number_of_questions)
 
-    def test_displays_default_quantity_of_question_forms_when_given_value_is_not_number(self):
+    def test_displays_the_same_number_of_forms_as_quiz_questions_when_given_value_is_not_number(self):
         response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions='not-int'))
-        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 10)
-
-    def test_displays_the_same_quantity_of_forms_as_questions_when_number_of_questions_is_greater_than_10(self):
-        self.add_questions_to_quiz(n=11)
-        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG))
-        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 12)
-
-    def test_displays_the_quantity_of_forms_as_questions_when_given_number_of_questions_is_smaller(self):
-        self.add_questions_to_quiz(n=11)
-        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG, questions=5))
-        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], 12)
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(response.context['questions_formset'], number_of_questions)
 
     def test_deletes_question(self):
         self.add_questions_to_quiz(n=1)

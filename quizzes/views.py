@@ -18,7 +18,16 @@ QUIZ_DELETE_SUCCESS_MESSAGE = 'Your quiz has been deleted successfully'
 
 @login_required
 def create_quiz(request):
-    number_of_questions = get_number_of_questions(request)
+    try:
+        number_of_questions = int(request.GET['questions'])
+    except (ValueError, KeyError):
+        number_of_questions = 10
+
+    if number_of_questions > 20:
+        number_of_questions = 20
+    elif number_of_questions < 1:
+        number_of_questions = 10
+
     QuestionsFormSet = create_question_formset(number_of_questions)
 
     if request.method == 'POST':
@@ -43,20 +52,6 @@ def create_quiz(request):
     })
 
 
-def get_number_of_questions(request):
-    try:
-        number_of_questions = int(request.GET.get('questions', 10))
-    except ValueError:
-        number_of_questions = 10
-    else:
-        # 20 is max number of questions
-        if number_of_questions > 20:
-            number_of_questions = 20
-        elif number_of_questions < 1:
-            number_of_questions = 10
-    return number_of_questions
-
-
 @login_required
 def update_quiz(request, slug):
     quiz = get_object_or_404(Quiz.objects.prefetch_related('questions__answers').select_related('author'),
@@ -64,12 +59,18 @@ def update_quiz(request, slug):
     if quiz.author != request.user:
         raise PermissionDenied()
 
-    number_of_questions = get_number_of_questions(request)
     number_of_quiz_questions = Question.objects.filter(quiz=quiz).count()
 
-    if number_of_questions < number_of_quiz_questions and request.GET.get('questions'):
-        number_of_questions = number_of_quiz_questions
-    QuestionsFormSet = create_question_formset(number_of_questions, can_delete=True)
+    try:
+        number_of_questions = int(request.GET['questions'])
+    except (ValueError, KeyError):
+        QuestionsFormSet = create_question_formset(number_of_quiz_questions, can_delete=True)
+    else:
+        if number_of_questions < 1:
+            number_of_questions = number_of_quiz_questions
+        elif number_of_questions > 20:
+            number_of_questions = 20
+        QuestionsFormSet = create_question_formset(number_of_questions, can_delete=True)
 
     if request.method == 'POST':
         quiz_form = QuizForm(request.POST, request.FILES, instance=quiz)

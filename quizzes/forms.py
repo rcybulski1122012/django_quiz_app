@@ -79,8 +79,8 @@ class BaseQuestionFormSet(BaseInlineFormSet):
 def create_question_formset(number_of_questions, can_delete=False):
     return inlineformset_factory(Quiz, Question, formset=BaseQuestionFormSet, fields=['question', 'quiz'],
                                  widgets={'question': forms.Textarea(attrs={'cols': 20, 'rows': 2})},
-                                 extra=number_of_questions, max_num=number_of_questions,
-                                 min_num=number_of_questions, can_delete=can_delete)
+                                 extra=number_of_questions, min_num=number_of_questions,
+                                 max_num=number_of_questions, can_delete=can_delete)
 
 
 class TakeQuestionForm(forms.Form):
