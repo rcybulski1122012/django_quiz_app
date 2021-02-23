@@ -3,7 +3,7 @@ from django import template
 register = template.Library()
 
 
-@register.simple_tag(name='questions_placeholder')
+@register.simple_tag(name="questions_placeholder")
 def get_number_of_questions_placeholder(questions, quiz=None):
     questions = questions or 10
     try:
@@ -23,4 +23,3 @@ def get_number_of_questions_placeholder(questions, quiz=None):
             questions = nq
 
     return questions
-

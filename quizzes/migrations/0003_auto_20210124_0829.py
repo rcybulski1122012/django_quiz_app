@@ -6,30 +6,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('quizzes', '0002_auto_20210119_1425'),
+        ("quizzes", "0002_auto_20210119_1425"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='category',
+            name="category",
             options={},
         ),
         migrations.AlterModelOptions(
-            name='quiz',
+            name="quiz",
             options={},
         ),
         migrations.RemoveField(
-            model_name='quiz',
-            name='is_published',
+            model_name="quiz",
+            name="is_published",
         ),
         migrations.AddField(
-            model_name='quiz',
-            name='thumbnail',
-            field=models.ImageField(default='default-quiz.jpg', upload_to='quiz_thumbnails/'),
+            model_name="quiz",
+            name="thumbnail",
+            field=models.ImageField(
+                default="default-quiz.jpg", upload_to="quiz_thumbnails/"
+            ),
         ),
         migrations.AlterField(
-            model_name='answer',
-            name='is_correct',
+            model_name="answer",
+            name="is_correct",
             field=models.BooleanField(),
         ),
     ]

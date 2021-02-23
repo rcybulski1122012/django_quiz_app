@@ -5,4 +5,4 @@ from accounts.models import Profile
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'photo', 'description']
+    list_display = ["user", "photo", "description"]

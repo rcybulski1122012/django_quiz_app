@@ -1,26 +1,26 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import BaseInlineFormSet, inlineformset_factory, BaseFormSet
+from django.forms import BaseFormSet, BaseInlineFormSet, inlineformset_factory
 
-from quizzes.models import Quiz, Question, Answer, Category
+from quizzes.models import Answer, Category, Question, Quiz
 
-SAME_QUIZ_TITLE_ERROR = 'Quiz with the same title already exists!'
-ALL_ANSWERS_INCORRECT_ERROR = 'At least one of the answers must be marked as correct!'
+SAME_QUIZ_TITLE_ERROR = "Quiz with the same title already exists!"
+ALL_ANSWERS_INCORRECT_ERROR = "At least one of the answers must be marked as correct!"
 
 
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ['title', 'description', 'category', 'thumbnail']
+        fields = ["title", "description", "category", "thumbnail"]
 
     def clean(self):
-        title = self.cleaned_data['title']
+        title = self.cleaned_data["title"]
         if Quiz.objects.filter(title=title).exists() and self.instance.title != title:
             raise ValidationError(SAME_QUIZ_TITLE_ERROR)
 
     def save(self, **kwargs):
-        commit = kwargs.get('commit', True)
-        author = kwargs.get('author', None)
+        commit = kwargs.get("commit", True)
+        author = kwargs.get("author", None)
         quiz = super().save(False)
         if author:
             quiz.author = author
@@ -36,14 +36,24 @@ class BaseAnswerFormSet(BaseInlineFormSet):
 
         does_proper_answer_exist = False
         for form in self.forms:
-            does_proper_answer_exist = does_proper_answer_exist or form.cleaned_data.get('is_correct')
+            does_proper_answer_exist = (
+                does_proper_answer_exist or form.cleaned_data.get("is_correct")
+            )
 
         if not does_proper_answer_exist:
             raise ValidationError(ALL_ANSWERS_INCORRECT_ERROR)
 
 
-AnswerFormSet = inlineformset_factory(Question, Answer, formset=BaseAnswerFormSet, fields=['answer', 'is_correct'],
-                                      extra=4, max_num=4, min_num=4, can_delete=False)
+AnswerFormSet = inlineformset_factory(
+    Question,
+    Answer,
+    formset=BaseAnswerFormSet,
+    fields=["answer", "is_correct"],
+    extra=4,
+    max_num=4,
+    min_num=4,
+    can_delete=False,
+)
 
 
 class BaseQuestionFormSet(BaseInlineFormSet):
@@ -53,14 +63,15 @@ class BaseQuestionFormSet(BaseInlineFormSet):
             instance=form.instance,
             data=form.data if form.is_bound else None,
             files=form.files if form.is_bound else None,
-            prefix=f'{form.prefix}-{AnswerFormSet.get_default_prefix()}')
+            prefix=f"{form.prefix}-{AnswerFormSet.get_default_prefix()}",
+        )
 
     def is_valid(self):
         result = super().is_valid()
 
         if self.is_bound:
             for form in self.forms:
-                if hasattr(form, 'nested'):
+                if hasattr(form, "nested"):
                     result = result and form.nested.is_valid()
 
         return result
@@ -69,7 +80,7 @@ class BaseQuestionFormSet(BaseInlineFormSet):
         result = super().save(commit=commit)
 
         for form in self.forms:
-            if hasattr(form, 'nested'):
+            if hasattr(form, "nested"):
                 if not self._should_delete_form(form):
                     form.nested.save(commit=commit)
 
@@ -77,23 +88,30 @@ class BaseQuestionFormSet(BaseInlineFormSet):
 
 
 def create_question_formset(number_of_questions, can_delete=False):
-    return inlineformset_factory(Quiz, Question, formset=BaseQuestionFormSet, fields=['question', 'quiz'],
-                                 widgets={'question': forms.Textarea(attrs={'cols': 20, 'rows': 2})},
-                                 extra=number_of_questions, min_num=number_of_questions,
-                                 max_num=number_of_questions, can_delete=can_delete)
+    return inlineformset_factory(
+        Quiz,
+        Question,
+        formset=BaseQuestionFormSet,
+        fields=["question", "quiz"],
+        widgets={"question": forms.Textarea(attrs={"cols": 20, "rows": 2})},
+        extra=number_of_questions,
+        min_num=number_of_questions,
+        max_num=number_of_questions,
+        can_delete=can_delete,
+    )
 
 
 class TakeQuestionForm(forms.Form):
     answer = forms.ModelChoiceField(queryset=None, widget=forms.RadioSelect)
 
     def set_question(self, question):
-        self.fields['answer'].queryset = question.answers
-        self.fields['answer'].label = question.question
+        self.fields["answer"].queryset = question.answers
+        self.fields["answer"].label = question.question
 
 
 class BaseTakeQuizFormSet(BaseFormSet):
     def __init__(self, *args, **kwargs):
-        quiz = kwargs.pop('quiz')
+        quiz = kwargs.pop("quiz")
         super().__init__(*args, **kwargs)
         for form, question in zip(self.forms, quiz.questions.all()):
             form.set_question(question)
@@ -103,7 +121,7 @@ class BaseTakeQuizFormSet(BaseFormSet):
         for form in self.forms:
             cd = form.cleaned_data
             try:
-                if cd['answer'].is_correct:
+                if cd["answer"].is_correct:
                     score += 1
             except KeyError:
                 pass
@@ -112,5 +130,9 @@ class BaseTakeQuizFormSet(BaseFormSet):
 
 class FilterQuizzesForm(forms.Form):
     author = forms.CharField(required=False)
-    category = forms.ChoiceField(choices=[
-        (category.slug, category.slug.capitalize()) for category in Category.objects.all()])
+    category = forms.ChoiceField(
+        choices=[
+            (category.slug, category.slug.capitalize())
+            for category in Category.objects.all()
+        ]
+    )

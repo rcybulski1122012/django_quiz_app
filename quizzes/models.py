@@ -9,7 +9,7 @@ class Category(models.Model):
     slug = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        verbose_name_plural = 'Categories'
+        verbose_name_plural = "Categories"
 
     def __str__(self):
         return self.title
@@ -23,24 +23,30 @@ class Quiz(models.Model):
     title = models.CharField(max_length=100)
     slug = models.CharField(max_length=100, unique=True)
     description = models.TextField(max_length=500, blank=True)
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='quizzes')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name='quizzes', null=True)
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quizzes"
+    )
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, related_name="quizzes", null=True
+    )
     created = models.DateField(auto_now_add=True)
     updated = models.DateField(auto_now=True)
-    thumbnail = models.ImageField(upload_to='quiz_thumbnails/', default='default-quiz.jpg')
+    thumbnail = models.ImageField(
+        upload_to="quiz_thumbnails/", default="default-quiz.jpg"
+    )
 
     class Meta:
-        verbose_name_plural = 'Quizzes'
-        ordering = ['-created']
+        verbose_name_plural = "Quizzes"
+        ordering = ["-created"]
 
     def __str__(self):
         return self.title
 
     def __repr__(self):
-        return f'<Quiz: {self.title}>'
+        return f"<Quiz: {self.title}>"
 
     def get_absolute_url(self):
-        return reverse('quizzes:detail', args=[self.slug])
+        return reverse("quizzes:detail", args=[self.slug])
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.title)
@@ -49,7 +55,7 @@ class Quiz(models.Model):
 
 class Question(models.Model):
     question = models.TextField(max_length=300)
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
 
     def __str__(self):
         return self.question
@@ -57,7 +63,9 @@ class Question(models.Model):
 
 class Answer(models.Model):
     answer = models.CharField(max_length=100)
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="answers"
+    )
     is_correct = models.BooleanField(default=False)
 
     def __str__(self):
