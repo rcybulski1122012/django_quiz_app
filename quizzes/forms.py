@@ -2,10 +2,12 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import BaseFormSet, BaseInlineFormSet, inlineformset_factory
 
+from common.utils import is_too_long_word_in_text
 from quizzes.models import Answer, Category, Question, Quiz
 
 SAME_QUIZ_TITLE_ERROR = "Quiz with the same title already exists!"
 ALL_ANSWERS_INCORRECT_ERROR = "At least one of the answers must be marked as correct!"
+TOO_LONG_WORD_ERROR = "Any word should not be longer than 45 characters."
 
 
 class QuizForm(forms.ModelForm):
@@ -17,6 +19,12 @@ class QuizForm(forms.ModelForm):
         title = self.cleaned_data["title"]
         if Quiz.objects.filter(title=title).exists() and self.instance.title != title:
             raise ValidationError(SAME_QUIZ_TITLE_ERROR)
+
+    def clean_description(self):
+        description = self.cleaned_data["description"]
+        if is_too_long_word_in_text(description):
+            raise forms.ValidationError(TOO_LONG_WORD_ERROR)
+        return description
 
     def save(self, **kwargs):
         commit = kwargs.get("commit", True)
@@ -75,6 +83,16 @@ class BaseQuestionFormSet(BaseInlineFormSet):
                     result = result and form.nested.is_valid()
 
         return result
+
+    def clean(self):
+        if any(self.errors):
+            return
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            question_body = form.cleaned_data["question"]
+            if is_too_long_word_in_text(question_body):
+                raise ValidationError(TOO_LONG_WORD_ERROR)
 
     def save(self, commit=True):
         result = super().save(commit=commit)

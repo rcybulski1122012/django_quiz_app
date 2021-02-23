@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
-from accounts.forms import UserRegistrationForm
+from accounts.forms import ProfileForm, UserRegistrationForm
 from accounts.models import Profile
 
 User = get_user_model()
@@ -30,7 +30,7 @@ class RegisterView(CreateView):
 
 class ProfileView(LoginRequiredMixin, UpdateView):
     model = Profile
-    fields = ["description", "photo"]
+    form_class = ProfileForm
     template_name = "accounts/profile.html"
     success_url = reverse_lazy("accounts:profile")
 

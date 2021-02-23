@@ -10,7 +10,7 @@ from quizzes.tests.utils import QuizzesUtilsMixin
 QuestionFormSet = create_question_formset(number_of_questions=1)
 
 
-class TestQuizCreationForm(TestCase):
+class TestQuizForm(TestCase):
     def setUp(self):
         self.category = Category.objects.create(title="test")
         self.user = User.objects.create_user(
@@ -44,6 +44,15 @@ class TestQuizCreationForm(TestCase):
         quiz = form.save(author=self.user, commit=True)
         self.assertIs(quiz.author, self.user)
         self.assertTrue(Quiz.objects.filter(title=quiz.title).exists())
+
+    def test_invalid_when_any_word_of_description_is_longer_than_45_characters(self):
+        data = {
+            "title": "Example",
+            "category": str(self.category.pk),
+            "description": "one_very_long_word_and_that_should_raise_a_validation_error",
+        }
+        form = QuizForm(data)
+        self.assertFalse(form.is_valid())
 
 
 class TestAnswerFormSet(TestCase):
@@ -163,6 +172,13 @@ class TestQuestionFormSet(TestCase):
         questions = formset.save()
         self.assertTrue(Question.objects.filter(quiz=quiz).exists())
         self.assertTrue(Answer.objects.filter(question=questions[0]).exists())
+
+    def test_invalid_when_any_word_of_question_body_is_longer_than_45_characters(self):
+        data = self.get_example_formset_data(
+            question_body="one_very_long_word_and_that_should_raise_a_validation_error"
+        )
+        formset = QuestionFormSet(data=data)
+        self.assertFalse(formset.is_valid())
 
 
 class TestTakeQuizFormSet(QuizzesUtilsMixin, TestCase):

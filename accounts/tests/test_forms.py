@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 
-from accounts.forms import UserRegistrationForm
+from accounts.forms import ProfileForm, UserRegistrationForm
 
 
 class TestUserRegistrationForm(TestCase):
@@ -41,4 +41,18 @@ class TestUserRegistrationForm(TestCase):
     def test_is_invalid_when_email_is_not_given(self):
         data = self.get_example_form_data(email="")
         form = UserRegistrationForm(data=data)
+        self.assertFalse(form.is_valid())
+
+
+class TestProfileForm(SimpleTestCase):
+    def test_valid_form(self):
+        data = {"description": "few words which any is not longer than 45 characters"}
+        form = ProfileForm(data)
+        self.assertTrue(form.is_valid())
+
+    def test_invalid_when_any_word_of_description_is_longer_than_45_characters(self):
+        data = {
+            "description": "one_very_long_word_and_that_should_raise_a_validation_error"
+        }
+        form = ProfileForm(data)
         self.assertFalse(form.is_valid())

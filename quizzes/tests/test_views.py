@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
 from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR, SAME_QUIZ_TITLE_ERROR,
-                           FilterQuizzesForm)
+                           TOO_LONG_WORD_ERROR, FilterQuizzesForm)
 from quizzes.models import Question, Quiz
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
 from quizzes.views import (QUIZ_CREATE_SUCCESS_MESSAGE,
@@ -106,6 +106,22 @@ class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
             )
         finally:
             rmtree(self.dummy_media_files_dir)
+
+    def test_displays_error_when_any_word_of_description_is_longer_than_45_characters(
+        self,
+    ):
+        response = self.post_create_view_with_one_question_quiz(
+            description="one_very_long_word_and_that_should_raise_a_validation_error"
+        )
+        self.assertContains(response, TOO_LONG_WORD_ERROR)
+
+    def test_displays_error_when_any_word_of_question_body_is_longer_than_45_characters(
+        self,
+    ):
+        response = self.post_create_view_with_one_question_quiz(
+            question_body="one_very_long_word_and_that_should_raise_a_validation_error"
+        )
+        self.assertContains(response, TOO_LONG_WORD_ERROR)
 
 
 class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
@@ -315,6 +331,26 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         }
         self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
         self.assertFalse(Quiz.objects.filter(title=self.QUIZ_TITLE).exists())
+
+    def test_displays_error_when_any_word_of_description_is_longer_than_45_characters(
+        self,
+    ):
+        data = self.get_example_update_quiz_form_data(self.quiz)
+        data[
+            "description"
+        ] = "one_very_long_word_and_that_should_raise_a_validation_error"
+        response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
+        self.assertContains(response, TOO_LONG_WORD_ERROR)
+
+    def test_displays_error_when_any_word_of_question_body_is_longer_than_45_characters(
+        self,
+    ):
+        data = self.get_example_update_quiz_form_data(self.quiz)
+        data[
+            "questions-0-question"
+        ] = "one_very_long_word_and_that_should_raise_a_validation_error"
+        response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
+        self.assertContains(response, TOO_LONG_WORD_ERROR)
 
 
 class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):

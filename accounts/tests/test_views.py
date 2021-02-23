@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from accounts.forms import SAME_EMAIL_ERROR
+from accounts.forms import SAME_EMAIL_ERROR, TOO_LONG_WORD_ERROR
 from accounts.models import Profile
 from accounts.views import (ACCOUNT_CREATE_SUCCESS_MESSAGE,
                             PROFILE_UPDATE_SUCCESS_MESSAGE)
@@ -128,3 +128,15 @@ class TestProfileView(TestCase):
     def test_displays_appropriate_message_when_user_has_no_quizzes(self):
         response = self.client.get(self.profile_url)
         self.assertContains(response, "You have not created any quiz yet.")
+
+    def test_displays_error_when_any_word_of_description_is_longer_than_45_characters(
+        self,
+    ):
+        response = self.client.post(
+            self.profile_url,
+            data={
+                "description": "one_very_long_word_and_that_should_raise_a_validation_error"
+            },
+            follow=True,
+        )
+        self.assertContains(response, TOO_LONG_WORD_ERROR)
