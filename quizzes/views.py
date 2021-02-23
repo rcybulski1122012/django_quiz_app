@@ -56,6 +56,7 @@ def create_quiz(request):
         {
             "quiz_form": quiz_form,
             "questions_formset": questions_formset,
+            "number_of_questions": number_of_questions,
         },
     )
 
@@ -74,6 +75,7 @@ def update_quiz(request, slug):
     try:
         number_of_questions = int(request.GET["questions"])
     except (ValueError, KeyError):
+        number_of_questions = number_of_quiz_questions
         QuestionsFormSet = create_question_formset(
             number_of_quiz_questions, can_delete=True
         )
@@ -103,7 +105,12 @@ def update_quiz(request, slug):
     return render(
         request,
         "quizzes/quiz/update.html",
-        {"questions_formset": questions_formset, "quiz_form": quiz_form, "quiz": quiz},
+        {
+            "questions_formset": questions_formset,
+            "quiz_form": quiz_form,
+            "quiz": quiz,
+            "number_of_questions": number_of_questions,
+        },
     )
 
 

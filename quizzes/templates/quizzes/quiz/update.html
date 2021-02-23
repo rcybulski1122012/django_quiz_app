@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
-{% load quizzes_utils %}
 
 {% block title %}
 Update "{{ quiz.title }}"
@@ -11,7 +10,7 @@ Update "{{ quiz.title }}"
 <form method="get" class="mb-5">
   <label for="questions">Number of questions</label>
   <input type="number" name="questions" id="questions"
-         placeholder="{% questions_placeholder request.GET.questions quiz %}"
+         placeholder="{{ number_of_questions }}"
          class="form-control">
   <input type="submit" value="Change number of questions" class="btn btn-outline-primary mt-2">
 </form>
