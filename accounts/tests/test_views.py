@@ -101,7 +101,7 @@ class TestProfileView(TestCase):
 
     def test_redirects_to_login_page_when_user_is_not_logged(self):
         self.client.logout()
-        response = self.client.get(self.profile_url, follow=True)
+        response = self.client.get(self.profile_url)
         self.assertRedirects(response, f"{self.login_url}?next={self.profile_url}")
 
     def test_updates_profile_when_data_is_correct(self):

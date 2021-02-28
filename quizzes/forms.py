@@ -8,6 +8,10 @@ from quizzes.models import Answer, Category, Question, Quiz
 SAME_QUIZ_TITLE_ERROR = "Quiz with the same title already exists!"
 ALL_ANSWERS_INCORRECT_ERROR = "At least one of the answers must be marked as correct!"
 TOO_LONG_WORD_ERROR = "Any word should not be longer than 45 characters."
+DELETE_ALL_QUESTIONS_ERROR = (
+    "You can not delete all questions!"
+    "If you want to delete entire quiz, you can do in on the profile page."
+)
 
 
 class QuizForm(forms.ModelForm):
@@ -87,14 +91,22 @@ class BaseQuestionFormSet(BaseInlineFormSet):
     def clean(self):
         if any(self.errors):
             return
+        number_of_questions_to_delete = 0
         for form in self.forms:
             if self.can_delete and self._should_delete_form(form):
+                number_of_questions_to_delete += 1
                 continue
             question_body = form.cleaned_data["question"]
             if is_too_long_word_in_text(question_body):
                 raise ValidationError(TOO_LONG_WORD_ERROR)
 
-    def save(self, commit=True):
+        if number_of_questions_to_delete == len(self.forms):
+            raise ValidationError(DELETE_ALL_QUESTIONS_ERROR)
+
+    def save(self, commit=True, *, quiz=None):
+        if quiz:
+            self.instance = quiz
+
         result = super().save(commit=commit)
 
         for form in self.forms:

@@ -8,6 +8,7 @@ from quizzes.models import Answer, Category, Question, Quiz
 from quizzes.tests.utils import QuizzesUtilsMixin
 
 QuestionFormSet = create_question_formset(number_of_questions=1)
+UpdateQuestionFormSet = create_question_formset(number_of_questions=1, can_delete=True)
 
 
 class TestQuizForm(TestCase):
@@ -107,7 +108,7 @@ class TestAnswerFormSet(TestCase):
         self.assertTrue(Answer.objects.filter(question=self.question).exists())
 
 
-class TestQuestionFormSet(TestCase):
+class TestQuestionFormSet(QuizzesUtilsMixin, TestCase):
     @staticmethod
     def get_example_formset_data(
         title="Quiz title",
@@ -161,11 +162,9 @@ class TestQuestionFormSet(TestCase):
         self.assertTrue(isinstance(formset.forms[0].nested, AnswerFormSet))
 
     def test_saves_questions_and_answers(self):
-        category = Category.objects.create(title="Category")
-        user = User.objects.create_user(
-            "User123", "addressemail123@gmail.com", "SecretPass123"
-        )
-        quiz = Quiz.objects.create(title="Title", category=category, author=user)
+        category = self.create_category()
+        user = self.create_user()
+        quiz = self.create_quiz(user=user, category=category)
 
         data = self.get_example_formset_data()
         formset = QuestionFormSet(data=data, instance=quiz)
@@ -178,6 +177,17 @@ class TestQuestionFormSet(TestCase):
             question_body="one_very_long_word_and_that_should_raise_a_validation_error"
         )
         formset = QuestionFormSet(data=data)
+        self.assertFalse(formset.is_valid())
+
+    def test_invalid_when_delete_all_questions(self):
+        category = self.create_category()
+        user = self.create_user()
+        quiz = self.create_quiz(user=user, category=category)
+        self.create_question(quiz)
+
+        data = self.get_example_formset_data()
+        data["questions-0-DELETE"] = "on"
+        formset = UpdateQuestionFormSet(data=data, instance=quiz)
         self.assertFalse(formset.is_valid())
 
 

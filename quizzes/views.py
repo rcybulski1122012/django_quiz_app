@@ -1,117 +1,130 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.exceptions import PermissionDenied
 from django.forms import formset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, ListView
+from django.views.generic.base import TemplateView
+from django.views.generic.detail import SingleObjectMixin
 
-from quizzes.forms import (BaseTakeQuizFormSet, FilterQuizzesForm, QuizForm,
-                           TakeQuestionForm, create_question_formset)
-from quizzes.models import Question, Quiz
+from quizzes.forms import (
+    BaseTakeQuizFormSet,
+    FilterQuizzesForm,
+    QuizForm,
+    TakeQuestionForm,
+    create_question_formset,
+)
+from quizzes.models import Quiz
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
 QUIZ_UPDATE_SUCCESS_MESSAGE = "Your quiz has been updated successfully"
 QUIZ_DELETE_SUCCESS_MESSAGE = "Your quiz has been deleted successfully"
 
 
-@login_required
-def create_quiz(request):
-    try:
-        number_of_questions = int(request.GET["questions"])
-    except (ValueError, KeyError):
-        number_of_questions = 10
+class QuizFormView(LoginRequiredMixin, TemplateView):
+    template_name = None
+    default_number_of_questions = None
+    _number_of_questions = None
+    can_delete = False
+    object = None
+    success_message = None
+    success_url = None
 
-    if number_of_questions > 20:
-        number_of_questions = 20
-    elif number_of_questions < 1:
-        number_of_questions = 10
-
-    QuestionsFormSet = create_question_formset(number_of_questions)
-
-    if request.method == "POST":
-        quiz_form = QuizForm(request.POST, request.FILES)
-        if quiz_form.is_valid():
-            quiz = quiz_form.save(author=request.user, commit=False)
-            questions_formset = QuestionsFormSet(request.POST, instance=quiz)
-            if questions_formset.is_valid():
-                quiz.save()
-                questions_formset.save()
-                messages.success(
-                    request,
-                    QUIZ_CREATE_SUCCESS_MESSAGE,
-                    extra_tags="alert alert-success",
-                )
-                return redirect("accounts:profile")
-        else:
-            questions_formset = QuestionsFormSet(request.POST)
-    else:
-        quiz_form = QuizForm()
-        questions_formset = QuestionsFormSet()
-
-    return render(
-        request,
-        "quizzes/quiz/create.html",
-        {
-            "quiz_form": quiz_form,
-            "questions_formset": questions_formset,
-            "number_of_questions": number_of_questions,
-        },
-    )
-
-
-@login_required
-def update_quiz(request, slug):
-    quiz = get_object_or_404(
-        Quiz.objects.prefetch_related("questions__answers").select_related("author"),
-        slug=slug,
-    )
-    if quiz.author != request.user:
-        raise PermissionDenied()
-
-    number_of_quiz_questions = Question.objects.filter(quiz=quiz).count()
-
-    try:
-        number_of_questions = int(request.GET["questions"])
-    except (ValueError, KeyError):
-        number_of_questions = number_of_quiz_questions
-        QuestionsFormSet = create_question_formset(
-            number_of_quiz_questions, can_delete=True
+    def dispatch(self, request, *args, **kwargs):
+        self._number_of_questions = self.get_number_of_questions(
+            request, default=self.default_number_of_questions
         )
-    else:
-        if number_of_questions < 1:
-            number_of_questions = number_of_quiz_questions
-        elif number_of_questions > 20:
-            number_of_questions = 20
-        QuestionsFormSet = create_question_formset(number_of_questions, can_delete=True)
 
-    if request.method == "POST":
-        quiz_form = QuizForm(request.POST, request.FILES, instance=quiz)
-        questions_formset = QuestionsFormSet(request.POST, instance=quiz)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data()
+        context["number_of_questions"] = self._number_of_questions
+        return context
+
+    def get_questions_formset_class(self):
+        return create_question_formset(
+            self._number_of_questions, can_delete=self.can_delete
+        )
+
+    def get(self, request, *args, **kwargs):
+        QuestionsFormSet = self.get_questions_formset_class()
+        context = {
+            **self.get_context_data(),
+            "quiz_form": QuizForm(instance=self.object),
+            "questions_formset": QuestionsFormSet(instance=self.object),
+        }
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        QuestionsFormSet = self.get_questions_formset_class()
+        quiz_form = QuizForm(
+            self.request.POST, self.request.FILES, instance=self.object
+        )
+        questions_formset = QuestionsFormSet(request.POST, instance=self.object)
+
         if quiz_form.is_valid() and questions_formset.is_valid():
-            quiz_form.save()
-            questions_formset.save()
-            if not Question.objects.filter(quiz=quiz).exists():
-                quiz.delete()
-            messages.success(
-                request, QUIZ_UPDATE_SUCCESS_MESSAGE, extra_tags="alert alert-success"
-            )
-            return redirect("accounts:profile")
-    else:
-        quiz_form = QuizForm(instance=quiz)
-        questions_formset = QuestionsFormSet(instance=quiz)
+            return self.forms_valid(quiz_form, questions_formset)
+        else:
+            return self.forms_invalid(quiz_form, questions_formset)
 
-    return render(
-        request,
-        "quizzes/quiz/update.html",
-        {
-            "questions_formset": questions_formset,
+    def forms_valid(self, quiz_form, questions_formset):
+        quiz = quiz_form.save(author=self.request.user)
+        questions_formset.save(quiz=quiz)
+        messages.success(self.request, self.success_message)
+        return redirect(self.success_url)
+
+    def forms_invalid(self, quiz_form, questions_formset):
+        context = {
+            **self.get_context_data(),
             "quiz_form": quiz_form,
-            "quiz": quiz,
-            "number_of_questions": number_of_questions,
-        },
+            "questions_formset": questions_formset,
+        }
+        return self.render_to_response(context)
+
+    @staticmethod
+    def get_number_of_questions(request, *, default=10):
+        try:
+            number_of_questions = int(request.GET["questions"])
+        except (ValueError, KeyError):
+            return default
+
+        if number_of_questions > 20:
+            return 20
+        elif number_of_questions < 1:
+            return default
+        else:
+            return number_of_questions
+
+
+class CreateQuizView(QuizFormView):
+    template_name = "quizzes/quiz/create.html"
+    default_number_of_questions = 10
+    success_message = QUIZ_CREATE_SUCCESS_MESSAGE
+    success_url = reverse_lazy("accounts:profile")
+
+
+class UpdateQuizView(UserPassesTestMixin, SingleObjectMixin, QuizFormView):
+    template_name = "quizzes/quiz/update.html"
+    success_message = QUIZ_UPDATE_SUCCESS_MESSAGE
+    success_url = reverse_lazy("accounts:profile")
+    can_delete = True
+    queryset = Quiz.objects.select_related("author", "category").prefetch_related(
+        "questions__answers"
     )
+
+    def dispatch(self, request, *args, **kwargs):
+        self.default_number_of_questions = self.get_object().questions.count()
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["quiz"] = self.object
+        return context
+
+    def test_func(self):
+        return self.get_object().author == self.request.user
 
 
 class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
@@ -120,11 +133,9 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     template_name = "quizzes/quiz/confirm_delete.html"
     context_object_name = "quiz"
 
-    def delete(self, request, **kwargs):
-        messages.success(
-            request, QUIZ_DELETE_SUCCESS_MESSAGE, extra_tags="alert alert-success"
-        )
-        return super().delete(request, **kwargs)
+    def delete(self, *args, **kwargs):
+        messages.success(self.request, QUIZ_DELETE_SUCCESS_MESSAGE)
+        return super().delete(*args, **kwargs)
 
     def get_object(self, **kwargs):
         return get_object_or_404(
@@ -137,7 +148,9 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 def take_quiz(request, slug):
     quiz = get_object_or_404(
-        Quiz.objects.prefetch_related("questions__answers").select_related("author"),
+        Quiz.objects.select_related("author", "category").prefetch_related(
+            "questions__answers"
+        ),
         slug=slug,
     )
     number_of_questions = quiz.questions.count()
@@ -149,7 +162,7 @@ def take_quiz(request, slug):
         formset = TakeQuizFormset(data=request.POST, quiz=quiz)
         if formset.is_valid():
             score = formset.get_score()
-            score_percentage = int(score / number_of_questions * 100)
+            score_percentage = calculate_score_percentage(score, number_of_questions)
             return render(
                 request,
                 "quizzes/quiz/score.html",
@@ -161,17 +174,23 @@ def take_quiz(request, slug):
     return render(request, "quizzes/quiz/take.html", {"formset": formset, "quiz": quiz})
 
 
+def calculate_score_percentage(score, number_of_questions):
+    return int((score / number_of_questions) * 100)
+
+
 class QuizzesListView(ListView):
     model = Quiz
     template_name = "quizzes/quiz/list.html"
     paginate_by = 9
     context_object_name = "quizzes"
+    author_username = None
+    category_slug = None
 
-    def dispatch(self, *args, **kwargs):
-        self.author_username = self.request.GET.get("author", None)
-        self.category_slug = self.request.GET.get("category", None)
+    def dispatch(self, request, *args, **kwargs):
+        self.author_username = self.request.GET.get("author")
+        self.category_slug = self.request.GET.get("category")
 
-        return super().dispatch(*args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -184,8 +203,8 @@ class QuizzesListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data()
-        context["author_username"] = self.author_username or ""
-        context["category_slug"] = self.category_slug or ""
+        context["author_username"] = self.author_username
+        context["category_slug"] = self.category_slug
         context["filter_form"] = FilterQuizzesForm()
 
         return context
@@ -197,4 +216,4 @@ class QuizDetailView(DetailView):
     context_object_name = "quiz"
 
     def get_queryset(self):
-        return super().get_queryset().select_related("author__profile", "category")
+        return self.model.objects.select_related("author__profile", "category")

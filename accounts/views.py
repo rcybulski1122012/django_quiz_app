@@ -1,6 +1,6 @@
-from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView
 
@@ -13,26 +13,20 @@ ACCOUNT_CREATE_SUCCESS_MESSAGE = "Your account has been created successfully."
 PROFILE_UPDATE_SUCCESS_MESSAGE = "Your Profile has been updated successfully."
 
 
-class RegisterView(CreateView):
+class RegisterView(SuccessMessageMixin, CreateView):
     model = User
     template_name = "accounts/register.html"
     form_class = UserRegistrationForm
     success_url = reverse_lazy("home")
-
-    def form_valid(self, form):
-        messages.success(
-            self.request,
-            ACCOUNT_CREATE_SUCCESS_MESSAGE,
-            extra_tags="alert alert-success",
-        )
-        return super().form_valid(form)
+    success_message = ACCOUNT_CREATE_SUCCESS_MESSAGE
 
 
-class ProfileView(LoginRequiredMixin, UpdateView):
+class ProfileView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = Profile
     form_class = ProfileForm
     template_name = "accounts/profile.html"
     success_url = reverse_lazy("accounts:profile")
+    success_message = PROFILE_UPDATE_SUCCESS_MESSAGE
 
     def get_object(self, **kwargs):
         return self.request.user.profile
@@ -41,11 +35,3 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context["quizzes"] = self.request.user.quizzes.all()
         return context
-
-    def form_valid(self, form):
-        messages.success(
-            self.request,
-            PROFILE_UPDATE_SUCCESS_MESSAGE,
-            extra_tags="alert alert-success",
-        )
-        return super().form_valid(form)

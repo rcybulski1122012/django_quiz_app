@@ -6,7 +6,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR, SAME_QUIZ_TITLE_ERROR,
+from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR,
+                           DELETE_ALL_QUESTIONS_ERROR, SAME_QUIZ_TITLE_ERROR,
                            TOO_LONG_WORD_ERROR, FilterQuizzesForm)
 from quizzes.models import Question, Quiz
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
@@ -55,7 +56,7 @@ class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
     def test_creates_quiz_questions_and_answers_when_given_data_is_correct(self):
         self.post_create_view_with_one_question_quiz()
         self.assertTrue(Quiz.objects.filter(title=self.QUIZ_TITLE).exists())
-        quiz = Quiz.objects.get(title=self.QUIZ_TITLE)
+        quiz = Quiz.objects.get()
         self.assertTrue(quiz.questions.exists())
         self.assertTrue(quiz.questions.all()[0].answers.exists())
 
@@ -183,7 +184,7 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
     def test_redirects_to_login_page_when_user_is_not_logged(self):
         update_quiz_url = self.get_update_quiz_url(self.QUIZ_SLUG)
         self.client.logout()
-        response = self.client.get(update_quiz_url, follow=True)
+        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG))
 
         self.assertRedirects(response, f"{self.login_url}?next={update_quiz_url}")
 
@@ -251,86 +252,11 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
         self.assertContains(response, ALL_ANSWERS_INCORRECT_ERROR)
 
-    def test_displays_error_message_when_quiz_with_the_same_title_already_exists(self):
-        Quiz.objects.create(title="title1", category=self.category, author=self.user)
-        data = self.get_example_update_quiz_form_data(self.quiz, title="title1")
-        response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
-        self.assertContains(response, SAME_QUIZ_TITLE_ERROR)
-
-    def test_displays_the_same_number_of_forms_as_quiz_questions_when_number_is_not_given(
-        self,
-    ):
-        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG))
-        number_of_questions = self.quiz.questions.count()
-        self.assertFormsetNumberOfFormsEqual(
-            response.context["questions_formset"], number_of_questions
-        )
-
-    def test_displays_the_same_number_of_forms_as_quiz_questions_when_given_number_is_smaller(
-        self,
-    ):
-        self.create_question(quiz=self.quiz)
-        response = self.client.get(
-            self.get_update_quiz_url(self.QUIZ_SLUG, questions=1)
-        )
-        number_of_questions = self.quiz.questions.count()
-        self.assertFormsetNumberOfFormsEqual(
-            response.context["questions_formset"], number_of_questions
-        )
-
-    def test_displays_given_quantity_of_questions_forms_when_it_is_greater_than_number_of_quiz_questions(
-        self,
-    ):
-        response = self.client.get(
-            self.get_update_quiz_url(self.QUIZ_SLUG, questions=5)
-        )
-        self.assertFormsetNumberOfFormsEqual(response.context["questions_formset"], 5)
-
-    def test_displays_maximum_quantity_of_question_forms_when_given_number_is_greater_than_max(
-        self,
-    ):
-        response = self.client.get(
-            self.get_update_quiz_url(self.QUIZ_SLUG, questions=25)
-        )
-        self.assertFormsetNumberOfFormsEqual(response.context["questions_formset"], 20)
-
-    def test_displays_the_same_number_of_forms_as_quiz_questions_when_given_number_is_smaller_than_min(
-        self,
-    ):
-        response = self.client.get(
-            self.get_update_quiz_url(self.QUIZ_SLUG, questions=-5)
-        )
-        number_of_questions = self.quiz.questions.count()
-        self.assertFormsetNumberOfFormsEqual(
-            response.context["questions_formset"], number_of_questions
-        )
-
-    def test_displays_the_same_number_of_forms_as_quiz_questions_when_given_value_is_not_number(
-        self,
-    ):
-        response = self.client.get(
-            self.get_update_quiz_url(self.QUIZ_SLUG, questions="not-int")
-        )
-        number_of_questions = self.quiz.questions.count()
-        self.assertFormsetNumberOfFormsEqual(
-            response.context["questions_formset"], number_of_questions
-        )
-
-    def test_deletes_question(self):
-        self.add_questions_to_quiz(n=1)
-        self.quiz.refresh_from_db()
+    def test_displays_error_when_last_questions_is_deleted(self):
         data = self.get_example_update_quiz_form_data(self.quiz)
         data["questions-0-DELETE"] = "on"
-        self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
-        self.assertEqual(Question.objects.filter(quiz=self.quiz).count(), 1)
-
-    def test_deletes_quiz_when_last_questions_is_deleted(self):
-        data = {
-            **self.get_example_update_quiz_form_data(self.quiz),
-            "questions-0-DELETE": "on",
-        }
-        self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
-        self.assertFalse(Quiz.objects.filter(title=self.QUIZ_TITLE).exists())
+        response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
+        self.assertContains(response, DELETE_ALL_QUESTIONS_ERROR)
 
     def test_displays_error_when_any_word_of_description_is_longer_than_45_characters(
         self,
@@ -352,6 +278,79 @@ class TestUpdateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
         self.assertContains(response, TOO_LONG_WORD_ERROR)
 
+    def test_displays_error_message_when_quiz_with_the_same_title_already_exists(self):
+        Quiz.objects.create(title="title1", category=self.category, author=self.user)
+        data = self.get_example_update_quiz_form_data(self.quiz, title="title1")
+        response = self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
+        self.assertContains(response, SAME_QUIZ_TITLE_ERROR)
+
+    def test_renders_the_same_number_of_forms_as_quiz_questions_when_number_is_not_given(
+        self,
+    ):
+        response = self.client.get(self.get_update_quiz_url(self.QUIZ_SLUG))
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(
+            response.context["questions_formset"], number_of_questions
+        )
+
+    def test_renders_the_same_number_of_forms_as_quiz_questions_when_given_number_is_smaller(
+        self,
+    ):
+        self.create_question(quiz=self.quiz)
+        response = self.client.get(
+            self.get_update_quiz_url(self.QUIZ_SLUG, questions=1)
+        )
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(
+            response.context["questions_formset"], number_of_questions
+        )
+
+    def test_renders_given_quantity_of_questions_forms_when_it_is_greater_than_number_of_quiz_questions(
+        self,
+    ):
+        response = self.client.get(
+            self.get_update_quiz_url(self.QUIZ_SLUG, questions=5)
+        )
+        self.assertFormsetNumberOfFormsEqual(response.context["questions_formset"], 5)
+
+    def test_renders_maximum_quantity_of_question_forms_when_given_number_is_greater_than_max(
+        self,
+    ):
+        response = self.client.get(
+            self.get_update_quiz_url(self.QUIZ_SLUG, questions=25)
+        )
+        self.assertFormsetNumberOfFormsEqual(response.context["questions_formset"], 20)
+
+    def test_renders_the_same_number_of_forms_as_quiz_questions_when_given_number_is_smaller_than_min(
+        self,
+    ):
+        response = self.client.get(
+            self.get_update_quiz_url(self.QUIZ_SLUG, questions=-5)
+        )
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(
+            response.context["questions_formset"], number_of_questions
+        )
+
+    def test_renders_the_same_number_of_forms_as_quiz_questions_when_given_value_is_not_number(
+        self,
+    ):
+        response = self.client.get(
+            self.get_update_quiz_url(self.QUIZ_SLUG, questions="not-int")
+        )
+        number_of_questions = self.quiz.questions.count()
+        self.assertFormsetNumberOfFormsEqual(
+            response.context["questions_formset"], number_of_questions
+        )
+
+    def test_deletes_question(self):
+        self.add_questions_to_quiz(n=1)
+        self.quiz.refresh_from_db()
+        data = self.get_example_update_quiz_form_data(self.quiz)
+        data["questions-0-DELETE"] = "on"
+        self.client.post(self.get_update_quiz_url(self.QUIZ_SLUG), data=data)
+        self.assertEqual(Question.objects.filter(quiz=self.quiz).count(), 1)
+
 
 class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):
     @classmethod
@@ -372,7 +371,7 @@ class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):
     def test_redirects_to_login_page_when_user_is_not_logged(self):
         delete_quiz_url = self.get_delete_quiz_url(self.QUIZ_SLUG)
         self.client.logout()
-        response = self.client.get(delete_quiz_url)
+        response = self.client.get(self.get_delete_quiz_url(slug=self.QUIZ_SLUG))
         self.assertRedirects(response, f"{self.login_url}?next={delete_quiz_url}")
 
     def test_returns_403_when_not_author_is_trying_to_delete_quiz(self):
@@ -382,7 +381,7 @@ class TestDeleteQuizView(QuizzesUtilsMixin, TestCase):
         )
         self.client.login(username="User124", password="SecretPass123")
 
-        response = self.client.get(self.get_delete_quiz_url(self.QUIZ_SLUG))
+        response = self.client.get(self.get_delete_quiz_url(slug=self.QUIZ_SLUG))
         self.assertEqual(response.status_code, 403)
 
     def test_deletes_quiz(self):
@@ -528,9 +527,7 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
     def test_displays_appropriate_message_when_there_are_no_quizzes_that_matches_the_filters(
         self,
     ):
-        response = self.client.get(
-            self.get_list_url(author_username="user-that-does-not-exists")
-        )
+        response = self.client.get(self.get_list_url(author_username="does-not-exists"))
         self.assertContains(response, "There are no quizzes that matches your filters.")
 
     @patch("quizzes.views.QuizzesListView.paginate_by", 1)
@@ -550,7 +547,7 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
     def test_pagination_returns_404_when_page_number_is_greater_than_total_number_of_pages(
         self,
     ):
-        response = self.client.get(self.get_list_url(page=4))
+        response = self.client.get(self.get_list_url(page=100))
         self.assertEqual(response.status_code, 404)
 
 
@@ -577,4 +574,4 @@ class TestQuizDetailView(QuizzesUtilsMixin, TestCase):
 
     def test_executes_only_one_query(self):
         with self.assertNumQueries(1):
-            self.client.get(self.get_quiz_detail_url(self.QUIZ_SLUG))
+            response = self.client.get(self.get_quiz_detail_url(self.QUIZ_SLUG))
