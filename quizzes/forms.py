@@ -160,9 +160,11 @@ class BaseTakeQuizFormSet(BaseFormSet):
 
 class FilterQuizzesForm(forms.Form):
     author = forms.CharField(required=False)
-    category = forms.ChoiceField(
-        choices=[
+    category = forms.ChoiceField(choices=[])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category"].choices = [
             (category.slug, category.slug.capitalize())
             for category in Category.objects.all()
         ]
-    )

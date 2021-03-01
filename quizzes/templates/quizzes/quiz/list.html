@@ -8,6 +8,18 @@ Quizzes list
 
 {% block content %}
 <h2>Quizzes list</h2>
+<small class="text-muted">Filtering:
+  {% if not category_slug or not author_username %}
+    None
+  {% else %}
+    {% if author_username %}
+      author={{ author_username }}
+    {% endif %}
+    {% if category_slug %}
+      category={{ category_slug }}
+    {% endif %}
+  {% endif %}
+</small>
 <hr>
 <form>
   {{ filter_form|crispy }}

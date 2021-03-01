@@ -7,11 +7,12 @@
 
 {% block content %}
 <h2>"{{ quiz.title }}" details</h2>
-<small class="text-muted">Created: {{ quiz.created|date:"F d, Y" }} | Category: {{ quiz.category.title }}</small>
+<small class="text-muted">Created: {{ quiz.created|date:"F d, Y" }} | Category:
+  <a href="{% url 'quizzes:list' %}?category={{ quiz.category.slug }}">{{ quiz.category.title }}</a></small>
 <hr>
 <p>
   <img src="{{ quiz.author.profile.photo|thumbnail_url:'avatar_thumbnail' }}" alt="author avatar" class="rounded-circle">
-  <a href="#">
+  <a href="{% url 'quizzes:list' %}?author={{ quiz.author.username }}">
     <span class="h4 ml-2 align-middle">{{ quiz.author.username }}</span>
   </a>
 </p>
