@@ -21,31 +21,14 @@ QUIZ_UPDATE_SUCCESS_MESSAGE = "Your quiz has been updated successfully"
 QUIZ_DELETE_SUCCESS_MESSAGE = "Your quiz has been deleted successfully"
 
 
-class QuizFormView(LoginRequiredMixin, TemplateView):
+class QuizWithQuestionsFormView(LoginRequiredMixin, TemplateView):
     template_name = None
     default_number_of_questions = None
-    _number_of_questions = None
     can_delete = False
     object = None
     success_message = None
     success_url = None
-
-    def dispatch(self, request, *args, **kwargs):
-        self._number_of_questions = self.get_number_of_questions(
-            request, default=self.default_number_of_questions
-        )
-
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data()
-        context["number_of_questions"] = self._number_of_questions
-        return context
-
-    def get_questions_formset_class(self):
-        return create_question_formset(
-            self._number_of_questions, can_delete=self.can_delete
-        )
+    _number_of_questions = None
 
     def get(self, request, *args, **kwargs):
         QuestionsFormSet = self.get_questions_formset_class()
@@ -68,6 +51,11 @@ class QuizFormView(LoginRequiredMixin, TemplateView):
         else:
             return self.forms_invalid(quiz_form, questions_formset)
 
+    def get_questions_formset_class(self):
+        return create_question_formset(
+            self._number_of_questions, can_delete=self.can_delete
+        )
+
     def forms_valid(self, quiz_form, questions_formset):
         quiz = quiz_form.save(author=self.request.user)
         questions_formset.save(quiz=quiz)
@@ -81,6 +69,13 @@ class QuizFormView(LoginRequiredMixin, TemplateView):
             "questions_formset": questions_formset,
         }
         return self.render_to_response(context)
+
+    def dispatch(self, request, *args, **kwargs):
+        self._number_of_questions = self.get_number_of_questions(
+            request, default=self.default_number_of_questions
+        )
+
+        return super().dispatch(request, *args, **kwargs)
 
     @staticmethod
     def get_number_of_questions(request, *, default=10):
@@ -96,15 +91,22 @@ class QuizFormView(LoginRequiredMixin, TemplateView):
         else:
             return number_of_questions
 
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data()
+        context["number_of_questions"] = self._number_of_questions
+        return context
 
-class CreateQuizView(QuizFormView):
+
+class CreateQuizWithQuestionsView(QuizWithQuestionsFormView):
     template_name = "quizzes/quiz/create.html"
     default_number_of_questions = 10
     success_message = QUIZ_CREATE_SUCCESS_MESSAGE
     success_url = reverse_lazy("accounts:profile")
 
 
-class UpdateQuizView(UserPassesTestMixin, SingleObjectMixin, QuizFormView):
+class UpdateQuizWithQuestionsView(
+    UserPassesTestMixin, SingleObjectMixin, QuizWithQuestionsFormView
+):
     template_name = "quizzes/quiz/update.html"
     success_message = QUIZ_UPDATE_SUCCESS_MESSAGE
     success_url = reverse_lazy("accounts:profile")
