@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import AnonymousUser
 from django.forms import formset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -14,7 +15,7 @@ from quizzes.forms import (
     TakeQuestionForm,
     create_question_formset,
 )
-from quizzes.models import Quiz
+from quizzes.models import Quiz, Score
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
 QUIZ_UPDATE_SUCCESS_MESSAGE = "Your quiz has been updated successfully"
@@ -165,6 +166,10 @@ def take_quiz(request, slug):
         if formset.is_valid():
             score = formset.get_score()
             score_percentage = calculate_score_percentage(score, number_of_questions)
+            if request.user != AnonymousUser():
+                Score.objects.create(
+                    user=request.user, quiz=quiz, percentage=score_percentage
+                )
             return render(
                 request,
                 "quizzes/quiz/score.html",

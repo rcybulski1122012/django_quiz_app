@@ -17,6 +17,7 @@
 </p>
 <hr>
 <p>{{ quiz.description|linebreaksbr }}</p>
+<p>Average score: <strong>{{ quiz.get_average_score }}%</strong></p>
 <hr>
 <a href="{% url 'quizzes:take' quiz.slug %}" class="btn btn-primary">Take the quiz</a>
 <a href="{% url 'quizzes:list' %}" class="btn btn-outline-primary">Back to the quizzes list</a>

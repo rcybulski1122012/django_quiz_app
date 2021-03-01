@@ -6,14 +6,20 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR,
-                           DELETE_ALL_QUESTIONS_ERROR, SAME_QUIZ_TITLE_ERROR,
-                           TOO_LONG_WORD_ERROR, FilterQuizzesForm)
-from quizzes.models import Question, Quiz
+from quizzes.forms import (
+    ALL_ANSWERS_INCORRECT_ERROR,
+    DELETE_ALL_QUESTIONS_ERROR,
+    SAME_QUIZ_TITLE_ERROR,
+    TOO_LONG_WORD_ERROR,
+    FilterQuizzesForm,
+)
+from quizzes.models import Question, Quiz, Score
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
-from quizzes.views import (QUIZ_CREATE_SUCCESS_MESSAGE,
-                           QUIZ_DELETE_SUCCESS_MESSAGE,
-                           QUIZ_UPDATE_SUCCESS_MESSAGE)
+from quizzes.views import (
+    QUIZ_CREATE_SUCCESS_MESSAGE,
+    QUIZ_DELETE_SUCCESS_MESSAGE,
+    QUIZ_UPDATE_SUCCESS_MESSAGE,
+)
 
 
 class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
@@ -447,6 +453,12 @@ class TestTakeQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         data = {"form-TOTAL_FORMS": 1, "form-INITIAL_FORMS": 0}
         response = self.client.post(self.get_take_quiz_url(self.QUIZ_SLUG), data=data)
         self.assertContains(response, "Congratulations! You got 0% (0/1)")
+
+    def test_creates_score_if_user_is_logged(self):
+        self.client.post(
+            self.get_take_quiz_url(self.QUIZ_SLUG), data=self.get_form_data()
+        )
+        self.assertTrue(Score.objects.filter(user=self.user, quiz=self.quiz).exists())
 
 
 class TestQuizzesListView(QuizzesUtilsMixin, TestCase):

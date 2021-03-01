@@ -52,6 +52,11 @@ class Quiz(models.Model):
         self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
+    def get_average_score(self):
+        return int(
+            self.scores.aggregate(models.Avg("percentage"))["percentage__avg"] or 0
+        )
+
 
 class Question(models.Model):
     question = models.TextField(max_length=300)
@@ -70,3 +75,14 @@ class Answer(models.Model):
 
     def __str__(self):
         return self.answer
+
+
+class Score(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="scores"
+    )
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="scores")
+    percentage = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.quiz}:{self.user}-{self.percentage}%"
