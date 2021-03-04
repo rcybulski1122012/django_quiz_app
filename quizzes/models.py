@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Avg, Count
 from django.urls import reverse
 from django.utils.text import slugify
 
@@ -19,6 +20,25 @@ class Category(models.Model):
         super().save(*args, **kwargs)
 
 
+class SortQuizzesQuerySet(models.QuerySet):
+    def sort_by_date_created(self, asc):
+        return super().order_by("created" if asc else "-created")
+
+    def sort_by_avg_score(self, asc):
+        return (
+            super()
+            .annotate(avg_score=Avg("scores__percentage"))
+            .order_by("avg_score" if asc else "-avg_score")
+        )
+
+    def sort_by_number_of_questions(self, asc):
+        return (
+            super()
+            .annotate(number_of_questions=Count("questions"))
+            .order_by("number_of_questions" if asc else "-number_of_questions")
+        )
+
+
 class Quiz(models.Model):
     title = models.CharField(max_length=100)
     slug = models.CharField(max_length=100, unique=True)
@@ -35,9 +55,10 @@ class Quiz(models.Model):
         upload_to="quiz_thumbnails/", default="default-quiz.jpg"
     )
 
+    objects = SortQuizzesQuerySet.as_manager()
+
     class Meta:
         verbose_name_plural = "Quizzes"
-        ordering = ["-created"]
 
     def __str__(self):
         return self.title

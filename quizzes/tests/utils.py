@@ -29,8 +29,14 @@ class QuizzesUtilsMixin:
         return reverse("quizzes:take", args=[slug])
 
     @staticmethod
-    def get_list_url(page="", author_username="", category_slug=""):
-        return f'{reverse("quizzes:list")}?page={page}&author={author_username}&category={category_slug}'
+    def get_list_url(page="", author_username="", category_slug="", sorting=""):
+        return (
+            f'{reverse("quizzes:list")}'
+            f"?page={page}"
+            f"&author={author_username}"
+            f"&category={category_slug}"
+            f"&sorting={sorting}"
+        )
 
     @staticmethod
     def get_quiz_detail_url(slug):
@@ -73,6 +79,11 @@ class QuizzesUtilsMixin:
         question.answers.add(Answer(answer="D", is_correct=True), bulk=False)
 
         return question
+
+    @staticmethod
+    def create_scores(quiz, user, scores):
+        for score in scores:
+            quiz.scores.create(quiz=quiz, user=user, percentage=score)
 
     def add_questions_to_quiz(self, n, quiz=None):
         quiz = quiz or self.quiz

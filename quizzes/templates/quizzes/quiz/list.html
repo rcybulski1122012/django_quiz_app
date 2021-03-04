@@ -8,21 +8,9 @@ Quizzes list
 
 {% block content %}
 <h2>Quizzes list</h2>
-<small class="text-muted">Filtering:
-  {% if not category_slug or not author_username %}
-    None
-  {% else %}
-    {% if author_username %}
-      author={{ author_username }}
-    {% endif %}
-    {% if category_slug %}
-      category={{ category_slug }}
-    {% endif %}
-  {% endif %}
-</small>
 <hr>
 <form>
-  {{ filter_form|crispy }}
+  {{ sort_filter_form|crispy }}
   <input type="submit" value="Filter" class="btn btn-outline-primary">
 </form>
 <hr>
@@ -50,7 +38,7 @@ Quizzes list
     {% if page_obj.has_previous %}
       <li class="page-item">
         <a class="page-link"
-           href="?page={{ page_obj.number|add:'-1' }}&author={{ author_username }}&category={{ category_slug }}">
+           href="?page={{ page_obj.number|add:'-1' }}&author={{ author_username }}&category={{ category_slug }}&sorting={{ sorting }}">
           <span aria-hidden="true">&laquo;</span>
         </a>
       </li>
@@ -58,7 +46,7 @@ Quizzes list
     {% for page_num in page_obj.paginator.page_range %}
       {% if page_num > page_obj.number|add:'-3' and page_num < page_obj.number|add:'3' %}
       <li class="page-item {% if page_obj.number ==  page_num %}active{% endif %}">
-        <a class="page-link" href="?page={{ page_num }}&author={{ author_username }}&category={{ category_slug }}">
+        <a class="page-link" href="?page={{ page_num }}&author={{ author_username }}&category={{ category_slug }}&sorting={{ sorting }}">
         {{ page_num }}</a></li>
       {% endif %}
     {% endfor %}
@@ -66,7 +54,7 @@ Quizzes list
     {% if page_obj.has_next %}
       <li class="page-item">
         <a class="page-link"
-           href="?page={{ page_obj.number|add:'1' }}&author={{ author_username }}&category={{ category_slug }}">
+           href="?page={{ page_obj.number|add:'1' }}&author={{ author_username }}&category={{ category_slug }}&sorting={{ sorting }}">
           <span aria-hidden="true">&raquo;</span>
         </a>
       </li>

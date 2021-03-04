@@ -2,8 +2,14 @@ from django.contrib.auth.models import User
 from django.forms import formset_factory
 from django.test import TestCase
 
-from quizzes.forms import (AnswerFormSet, BaseTakeQuizFormSet, QuizForm,
-                           TakeQuestionForm, create_question_formset)
+from quizzes.forms import (
+    AnswerFormSet,
+    BaseTakeQuizFormSet,
+    QuizForm,
+    TakeQuestionForm,
+    create_question_formset,
+    FilterSortQuizzesForm,
+)
 from quizzes.models import Answer, Category, Question, Quiz
 from quizzes.tests.utils import QuizzesUtilsMixin
 
@@ -246,3 +252,12 @@ class TestTakeQuizFormSet(QuizzesUtilsMixin, TestCase):
         }
         questions_titles = {question.question for question in self.quiz.questions.all()}
         self.assertEqual(formset_labels, questions_titles)
+
+
+class TestFilterSortQuizzesForm(QuizzesUtilsMixin, TestCase):
+    def test_sets_given_qs_to_category_field(self):
+        c1 = self.create_category(title="First")
+        c2 = self.create_category(title="Second")
+        expected_choices = [(c.slug, c.title.capitalize()) for c in [c1, c2]]
+        form = FilterSortQuizzesForm()
+        self.assertEqual(form.fields["category"].choices, expected_choices)

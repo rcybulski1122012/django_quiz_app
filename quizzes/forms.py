@@ -158,13 +158,23 @@ class BaseTakeQuizFormSet(BaseFormSet):
         return score
 
 
-class FilterQuizzesForm(forms.Form):
+class FilterSortQuizzesForm(forms.Form):
+    SORTING_OPTIONS = [
+        ("", "None"),
+        ("created", "Creation date ascending"),
+        ("-created", "Creation date descending"),
+        ("avg_score", "Average score ascending"),
+        ("-avg_score", "Average score descending"),
+        ("length", "Number of questions ascending"),
+        ("-length", "Number of questions descending"),
+    ]
     author = forms.CharField(required=False)
-    category = forms.ChoiceField(choices=[])
+    category = forms.ChoiceField(choices=[], required=False)
+    sort_by = forms.ChoiceField(choices=SORTING_OPTIONS, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["category"].choices = [
-            (category.slug, category.slug.capitalize())
+            (category.slug, category.title.capitalize())
             for category in Category.objects.all()
         ]

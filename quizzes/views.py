@@ -10,7 +10,7 @@ from django.views.generic.detail import SingleObjectMixin
 
 from quizzes.forms import (
     BaseTakeQuizFormSet,
-    FilterQuizzesForm,
+    FilterSortQuizzesForm,
     QuizForm,
     TakeQuestionForm,
     create_question_formset,
@@ -192,10 +192,12 @@ class QuizzesListView(ListView):
     context_object_name = "quizzes"
     author_username = None
     category_slug = None
+    sorting = None
 
     def dispatch(self, request, *args, **kwargs):
-        self.author_username = self.request.GET.get("author")
-        self.category_slug = self.request.GET.get("category")
+        self.author_username = self.request.GET.get("author", "")
+        self.category_slug = self.request.GET.get("category", "")
+        self.sorting = self.request.GET.get("sorting", "")
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -203,8 +205,25 @@ class QuizzesListView(ListView):
         qs = super().get_queryset()
         if self.author_username:
             qs = qs.filter(author__username=self.author_username)
-        if self.category_slug:
+        if self.category_slug and self.category_slug != "any":
             qs = qs.filter(category__slug=self.category_slug)
+        if self.sorting:
+            qs = self.sort_queryset(qs)
+        return qs
+
+    def sort_queryset(self, qs):
+        asc = True
+        sorting = self.sorting
+        if self.sorting.startswith("-"):
+            sorting = self.sorting[1:]
+            asc = False
+
+        if sorting == "created":
+            qs = qs.sort_by_date_created(asc)
+        elif sorting == "avg_score":
+            qs = qs.sort_by_avg_score(asc)
+        elif sorting == "length":
+            qs = qs.sort_by_number_of_questions(asc)
 
         return qs
 
@@ -212,7 +231,8 @@ class QuizzesListView(ListView):
         context = super().get_context_data()
         context["author_username"] = self.author_username
         context["category_slug"] = self.category_slug
-        context["filter_form"] = FilterQuizzesForm()
+        context["sorting"] = self.sorting
+        context["sort_filter_form"] = FilterSortQuizzesForm(self.request.GET)
 
         return context
 

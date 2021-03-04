@@ -1,3 +1,4 @@
+import datetime
 from os import path
 from shutil import rmtree
 from unittest.mock import patch
@@ -11,7 +12,7 @@ from quizzes.forms import (
     DELETE_ALL_QUESTIONS_ERROR,
     SAME_QUIZ_TITLE_ERROR,
     TOO_LONG_WORD_ERROR,
-    FilterQuizzesForm,
+    FilterSortQuizzesForm,
 )
 from quizzes.models import Question, Quiz, Score
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
@@ -474,9 +475,11 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
         self.quiz1 = self.create_quiz(
             title="Quiz1", user=self.user1, category=self.category1
         )
+
         self.quiz2 = self.create_quiz(
             title="Quiz2", user=self.user2, category=self.category2
         )
+
         self.quiz3 = self.create_quiz(
             title="Quiz3", user=self.user1, category=self.category2
         )
@@ -492,15 +495,17 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
 
     def test_context_contains_FilterQuizzesForm(self):
         response = self.client.get(self.get_list_url())
-        form = response.context["filter_form"]
-        self.assertTrue(isinstance(form, FilterQuizzesForm))
+        form = response.context["sort_filter_form"]
+        self.assertTrue(isinstance(form, FilterSortQuizzesForm))
 
     def test_displays_all_quizzes_when_no_filters(self):
         # Number of quizzes that were created in test case is 3
         # and the pagination of view is 9 so it should display all quizzes
         response = self.client.get(self.get_list_url())
         expected_qs = [repr(quiz) for quiz in Quiz.objects.all()]
-        self.assertQuerysetEqual(response.context["quizzes"], expected_qs)
+        self.assertQuerysetEqual(
+            response.context["quizzes"], expected_qs, ordered=False
+        )
 
     def test_filter_by_username(self):
         response = self.client.get(
@@ -510,7 +515,9 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
             repr(quiz)
             for quiz in Quiz.objects.filter(author__username=self.user1.username)
         ]
-        self.assertQuerysetEqual(response.context["quizzes"], expected_qs)
+        self.assertQuerysetEqual(
+            response.context["quizzes"], expected_qs, ordered=False
+        )
 
     def test_filter_by_category(self):
         response = self.client.get(self.get_list_url(category_slug=self.category1.slug))
@@ -518,7 +525,9 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
             repr(quiz)
             for quiz in Quiz.objects.filter(category__slug=self.category1.slug)
         ]
-        self.assertQuerysetEqual(response.context["quizzes"], expected_qs)
+        self.assertQuerysetEqual(
+            response.context["quizzes"], expected_qs, ordered=False
+        )
 
     def test_both_filters(self):
         response = self.client.get(
@@ -546,21 +555,52 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
     def test_pagination_when_page_number_is_proper(self):
         response = self.client.get(self.get_list_url(page=1))
         expected_qs = [repr(self.quiz1)]
-        self.assertQuerysetEqual(response.context["quizzes"], expected_qs)
+        self.assertQuerysetEqual(
+            response.context["quizzes"], expected_qs, ordered=False
+        )
 
         response = self.client.get(self.get_list_url(page=2))
         expected_qs = [repr(self.quiz2)]
-        self.assertQuerysetEqual(response.context["quizzes"], expected_qs)
+        self.assertQuerysetEqual(
+            response.context["quizzes"], expected_qs, ordered=False
+        )
 
         response = self.client.get(self.get_list_url(page=3))
         expected_qs = [repr(self.quiz3)]
-        self.assertQuerysetEqual(response.context["quizzes"], expected_qs)
+        self.assertQuerysetEqual(
+            response.context["quizzes"], expected_qs, ordered=False
+        )
 
     def test_pagination_returns_404_when_page_number_is_greater_than_total_number_of_pages(
         self,
     ):
         response = self.client.get(self.get_list_url(page=100))
         self.assertEqual(response.status_code, 404)
+
+    def test_sorting(self):
+        self.quiz1.created = datetime.date(2000, 1, 1)
+        self.quiz1.save()
+        self.create_scores(quiz=self.quiz1, user=self.user1, scores=[100, 75, 80])
+        self.quiz2.created = datetime.date(2010, 10, 10)
+        self.quiz2.save()
+        self.create_scores(quiz=self.quiz2, user=self.user1, scores=[50, 50, 40])
+        self.create_question(quiz=self.quiz1, question_body="question")
+        self.create_question(quiz=self.quiz1, question_body="question")
+        self.create_question(quiz=self.quiz2, question_body="question")
+
+        expected = [repr(quiz) for quiz in [self.quiz1, self.quiz2, self.quiz3]]
+        response = self.client.get(self.get_list_url(sorting="created"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected)
+        response = self.client.get(self.get_list_url(sorting="-created"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected[::-1])
+        response = self.client.get(self.get_list_url(sorting="avg_score"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected[::-1])
+        response = self.client.get(self.get_list_url(sorting="-avg_score"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected)
+        response = self.client.get(self.get_list_url(sorting="length"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected[::-1])
+        response = self.client.get(self.get_list_url(sorting="-length"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected)
 
 
 class TestQuizDetailView(QuizzesUtilsMixin, TestCase):
@@ -583,7 +623,3 @@ class TestQuizDetailView(QuizzesUtilsMixin, TestCase):
         self.assertContains(response, self.category.title)
         self.assertContains(response, self.user.username)
         self.assertContains(response, self.QUIZ_DESC)
-
-    def test_executes_only_one_query(self):
-        with self.assertNumQueries(1):
-            response = self.client.get(self.get_quiz_detail_url(self.QUIZ_SLUG))
