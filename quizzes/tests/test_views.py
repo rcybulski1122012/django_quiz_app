@@ -7,20 +7,14 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from quizzes.forms import (
-    ALL_ANSWERS_INCORRECT_ERROR,
-    DELETE_ALL_QUESTIONS_ERROR,
-    SAME_QUIZ_TITLE_ERROR,
-    TOO_LONG_WORD_ERROR,
-    FilterSortQuizzesForm,
-)
+from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR,
+                           DELETE_ALL_QUESTIONS_ERROR, SAME_QUIZ_TITLE_ERROR,
+                           TOO_LONG_WORD_ERROR, FilterSortQuizzesForm)
 from quizzes.models import Question, Quiz, Score
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
-from quizzes.views import (
-    QUIZ_CREATE_SUCCESS_MESSAGE,
-    QUIZ_DELETE_SUCCESS_MESSAGE,
-    QUIZ_UPDATE_SUCCESS_MESSAGE,
-)
+from quizzes.views import (QUIZ_CREATE_SUCCESS_MESSAGE,
+                           QUIZ_DELETE_SUCCESS_MESSAGE,
+                           QUIZ_UPDATE_SUCCESS_MESSAGE)
 
 
 class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):

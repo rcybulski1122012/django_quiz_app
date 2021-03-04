@@ -1,5 +1,4 @@
 import datetime
-from unittest.mock import Mock, patch
 
 from django.test import TestCase
 
@@ -83,7 +82,7 @@ class TestQuiz(QuizzesUtilsMixin, TestCase):
 
     def test_sort_by_number_of_questions(self):
         # self.quiz has one question
-        quiz2 = quiz2 = self.create_quiz(title="quiz2")
+        quiz2 = self.create_quiz(title="quiz2")
         self.create_question(quiz=quiz2)
         self.create_question(quiz=quiz2)
 

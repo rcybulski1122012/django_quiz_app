@@ -2,14 +2,9 @@ from django.contrib.auth.models import User
 from django.forms import formset_factory
 from django.test import TestCase
 
-from quizzes.forms import (
-    AnswerFormSet,
-    BaseTakeQuizFormSet,
-    QuizForm,
-    TakeQuestionForm,
-    create_question_formset,
-    FilterSortQuizzesForm,
-)
+from quizzes.forms import (AnswerFormSet, BaseTakeQuizFormSet,
+                           FilterSortQuizzesForm, QuizForm, TakeQuestionForm,
+                           create_question_formset)
 from quizzes.models import Answer, Category, Question, Quiz
 from quizzes.tests.utils import QuizzesUtilsMixin
 
