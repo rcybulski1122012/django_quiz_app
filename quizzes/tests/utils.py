@@ -46,6 +46,7 @@ class QuizzesUtilsMixin:
     EMAIL = "addressemail123@gmail.com"
     PASSWORD = "SecretPass123"
     CATEGORY_TITLE = "None"
+    CATEGORY_SLUG = "none"
 
     QUIZ_TITLE = "Quiz title"
     QUIZ_SLUG = slugify(QUIZ_TITLE)
@@ -57,8 +58,8 @@ class QuizzesUtilsMixin:
         return User.objects.create_user(username, email, password)
 
     @staticmethod
-    def create_category(title=CATEGORY_TITLE):
-        return Category.objects.create(title=title)
+    def create_category(title=CATEGORY_TITLE, slug=CATEGORY_SLUG):
+        return Category.objects.create(title=title, slug=slug)
 
     def create_quiz(
         self, title=QUIZ_TITLE, user=None, category=None, description=QUIZ_DESC
@@ -103,6 +104,7 @@ class QuizzesUtilsMixin:
         answer_d="D",
         follow=True,
         answer_d_is_correct="on",
+        question_0_img="",
     ):
         category = category or self.category.id
 
@@ -113,6 +115,7 @@ class QuizzesUtilsMixin:
             "category": category,
             "thumbnail": thumbnail,
             "questions-0-question": question_body,
+            "questions-0-image": question_0_img,
             "questions-0-answers-0-answer": answer_a,
             "questions-0-answers-1-answer": answer_b,
             "questions-0-answers-2-answer": answer_c,

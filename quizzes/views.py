@@ -8,13 +8,8 @@ from django.views.generic import DeleteView, DetailView, ListView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectMixin
 
-from quizzes.forms import (
-    BaseTakeQuizFormSet,
-    FilterSortQuizzesForm,
-    QuizForm,
-    TakeQuestionForm,
-    create_question_formset,
-)
+from quizzes.forms import (BaseTakeQuizFormSet, FilterSortQuizzesForm,
+                           QuizForm, TakeQuestionForm, create_question_formset)
 from quizzes.models import Quiz, Score
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
@@ -45,7 +40,9 @@ class QuizWithQuestionsFormView(LoginRequiredMixin, TemplateView):
         quiz_form = QuizForm(
             self.request.POST, self.request.FILES, instance=self.object
         )
-        questions_formset = QuestionsFormSet(request.POST, instance=self.object)
+        questions_formset = QuestionsFormSet(
+            request.POST, request.FILES, instance=self.object
+        )
 
         if quiz_form.is_valid() and questions_formset.is_valid():
             return self.forms_valid(quiz_form, questions_formset)

@@ -78,6 +78,7 @@ class Quiz(models.Model):
 class Question(models.Model):
     question = models.TextField(max_length=300)
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
+    image = models.ImageField(upload_to="questions_images/", blank=True)
 
     def __str__(self):
         return self.question

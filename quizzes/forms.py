@@ -122,7 +122,7 @@ def create_question_formset(number_of_questions, can_delete=False):
         Quiz,
         Question,
         formset=BaseQuestionFormSet,
-        fields=["question", "quiz"],
+        fields=["question", "quiz", "image"],
         widgets={"question": forms.Textarea(attrs={"cols": 20, "rows": 2})},
         extra=number_of_questions,
         min_num=number_of_questions,
@@ -133,10 +133,14 @@ def create_question_formset(number_of_questions, can_delete=False):
 
 class TakeQuestionForm(forms.Form):
     answer = forms.ModelChoiceField(queryset=None, widget=forms.RadioSelect)
+    image = None
+    question_body = None
 
     def set_question(self, question):
+        self.image = question.image
         self.fields["answer"].queryset = question.answers
-        self.fields["answer"].label = question.question
+        self.fields["answer"].label = ""
+        self.question_body = question.question
 
 
 class BaseTakeQuizFormSet(BaseFormSet):

@@ -7,14 +7,20 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR,
-                           DELETE_ALL_QUESTIONS_ERROR, SAME_QUIZ_TITLE_ERROR,
-                           TOO_LONG_WORD_ERROR, FilterSortQuizzesForm)
+from quizzes.forms import (
+    ALL_ANSWERS_INCORRECT_ERROR,
+    DELETE_ALL_QUESTIONS_ERROR,
+    SAME_QUIZ_TITLE_ERROR,
+    TOO_LONG_WORD_ERROR,
+    FilterSortQuizzesForm,
+)
 from quizzes.models import Question, Quiz, Score
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
-from quizzes.views import (QUIZ_CREATE_SUCCESS_MESSAGE,
-                           QUIZ_DELETE_SUCCESS_MESSAGE,
-                           QUIZ_UPDATE_SUCCESS_MESSAGE)
+from quizzes.views import (
+    QUIZ_CREATE_SUCCESS_MESSAGE,
+    QUIZ_DELETE_SUCCESS_MESSAGE,
+    QUIZ_UPDATE_SUCCESS_MESSAGE,
+)
 
 
 class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
@@ -96,18 +102,32 @@ class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         with open(settings.BASE_DIR / "media" / "default-quiz.jpg", "rb") as img:
             self.post_create_view_with_one_question_quiz(thumbnail=img)
 
-        try:
-            self.assertTrue(
-                path.exists(
-                    path.join(
-                        self.dummy_media_files_dir,
-                        "quiz_thumbnails",
-                        "default-quiz.jpg",
-                    )
+        self.assertTrue(
+            path.exists(
+                path.join(
+                    self.dummy_media_files_dir,
+                    "quiz_thumbnails",
+                    "default-quiz.jpg",
                 )
             )
-        finally:
-            rmtree(self.dummy_media_files_dir)
+        )
+        rmtree(self.dummy_media_files_dir)
+
+    @override_settings(MEDIA_ROOT=dummy_media_files_dir)
+    def test_saves_questions_image(self):
+        with open(settings.BASE_DIR / "media" / "default-quiz.jpg", "rb") as img:
+            self.post_create_view_with_one_question_quiz(question_0_img=img)
+
+        self.assertTrue(
+            path.exists(
+                path.join(
+                    self.dummy_media_files_dir,
+                    "questions_images",
+                    "default-quiz.jpg",
+                )
+            )
+        )
+        rmtree(self.dummy_media_files_dir)
 
     def test_displays_error_when_any_word_of_description_is_longer_than_45_characters(
         self,
@@ -460,8 +480,8 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.category1 = cls.create_category(title="Category1")
-        cls.category2 = cls.create_category(title="Category2")
+        cls.category1 = cls.create_category(title="Category1", slug="category1")
+        cls.category2 = cls.create_category(title="Category2", slug="category2")
         cls.user1 = cls.create_user(username="User1", email="addressemail1@gmail.com")
         cls.user2 = cls.create_user(username="User2", email="addressemail2@gmail.com")
 
