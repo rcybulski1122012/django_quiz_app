@@ -15,10 +15,6 @@ class Category(models.Model):
     def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.title)
-        super().save(*args, **kwargs)
-
 
 class SortQuizzesQuerySet(models.QuerySet):
     def sort_by_date_created(self, asc):

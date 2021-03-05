@@ -11,10 +11,6 @@ class TestCategory(TestCase):
         category = Category(title="title")
         self.assertEqual(str(category), "title")
 
-    def test_slugify_title(self):
-        category = Category.objects.create(title="category title")
-        self.assertEqual(category.slug, "category-title")
-
 
 class TestQuiz(QuizzesUtilsMixin, TestCase):
     @classmethod
