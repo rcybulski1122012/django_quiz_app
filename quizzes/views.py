@@ -1,15 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import AnonymousUser
-from django.forms import formset_factory
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import DeleteView, DetailView, ListView
+from django.views.generic import DeleteView, DetailView, FormView, ListView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectMixin
 
-from quizzes.forms import (BaseTakeQuizFormSet, FilterSortQuizzesForm,
-                           QuizForm, TakeQuestionForm, create_question_formset)
+from quizzes.forms import (FilterSortQuizzesForm, QuizForm,
+                           create_question_formset, create_take_quiz_formset)
 from quizzes.models import Quiz, Score
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
@@ -146,40 +145,67 @@ class DeleteQuizView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         return self.get_object().author == self.request.user
 
 
-def take_quiz(request, slug):
-    quiz = get_object_or_404(
-        Quiz.objects.select_related("author", "category").prefetch_related(
-            "questions__answers"
-        ),
-        slug=slug,
-    )
-    number_of_questions = quiz.questions.count()
-    TakeQuizFormset = formset_factory(
-        TakeQuestionForm, extra=number_of_questions, formset=BaseTakeQuizFormSet
-    )
+class TakeQuizView(SingleObjectMixin, FormView):
+    model = Quiz
+    template_name = "quizzes/quiz/take.html"
+    object = None
+    number_of_questions = None
 
-    if request.method == "POST":
-        formset = TakeQuizFormset(data=request.POST, quiz=quiz)
-        if formset.is_valid():
-            score = formset.get_score()
-            score_percentage = calculate_score_percentage(score, number_of_questions)
-            if request.user != AnonymousUser():
-                Score.objects.create(
-                    user=request.user, quiz=quiz, percentage=score_percentage
-                )
-            return render(
-                request,
-                "quizzes/quiz/score.html",
-                {"quiz": quiz, "score": score, "score_percentage": score_percentage},
+    def form_valid(self, form):
+        score = form.get_score()
+        score_percentage = self.calculate_score_percentage(
+            score, self.get_number_of_questions()
+        )
+        if not isinstance(self.request.user, AnonymousUser):
+            Score.objects.create(
+                user=self.request.user,
+                quiz=self.get_object(),
+                percentage=score_percentage,
             )
-    else:
-        formset = TakeQuizFormset(quiz=quiz)
+        return render(
+            self.request,
+            "quizzes/quiz/score.html",
+            {"quiz": self.object, "score": score, "score_percentage": score_percentage},
+        )
 
-    return render(request, "quizzes/quiz/take.html", {"formset": formset, "quiz": quiz})
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["quiz"] = self.get_object()
+        return kwargs
 
+    def get_form_class(self):
+        return create_take_quiz_formset(self.get_object().questions.count())
 
-def calculate_score_percentage(score, number_of_questions):
-    return int((score / number_of_questions) * 100)
+    def get_object(self, queryset=None):
+        if not self.object:
+            self.object = get_object_or_404(
+                self.get_queryset(), slug=self.kwargs["slug"]
+            )
+        return self.object
+
+    def get_number_of_questions(self):
+        if self.number_of_questions:
+            return self.number_of_questions
+        else:
+            if self.object:
+                self.number_of_questions = self.object.questions.count()
+                return self.number_of_questions
+            else:
+                quiz = self.get_object()
+                self.number_of_questions = quiz.questions.count()
+                return self.number_of_questions
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related("author", "category")
+            .prefetch_related("questions__answers")
+        )
+
+    @staticmethod
+    def calculate_score_percentage(score, number_of_questions):
+        return int((score / number_of_questions) * 100)
 
 
 class QuizzesListView(ListView):

@@ -12,7 +12,7 @@ urlpatterns = [
         name="update",
     ),
     path("delete/<slug:slug>/", views.DeleteQuizView.as_view(), name="delete"),
-    path("take/<slug:slug>/", views.take_quiz, name="take"),
+    path("take/<slug:slug>/", views.TakeQuizView.as_view(), name="take"),
     path("list/", views.QuizzesListView.as_view(), name="list"),
     path("detail/<slug:slug>/", views.QuizDetailView.as_view(), name="detail"),
 ]

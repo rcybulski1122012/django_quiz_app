@@ -1,6 +1,11 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import BaseFormSet, BaseInlineFormSet, inlineformset_factory
+from django.forms import (
+    BaseFormSet,
+    BaseInlineFormSet,
+    inlineformset_factory,
+    formset_factory,
+)
 
 from common.utils import is_too_long_word_in_text
 from quizzes.models import Answer, Category, Question, Quiz
@@ -160,6 +165,12 @@ class BaseTakeQuizFormSet(BaseFormSet):
             except KeyError:
                 pass
         return score
+
+
+def create_take_quiz_formset(number_of_questions):
+    return formset_factory(
+        TakeQuestionForm, extra=number_of_questions, formset=BaseTakeQuizFormSet
+    )
 
 
 class FilterSortQuizzesForm(forms.Form):
