@@ -7,8 +7,12 @@ from django.views.generic import DeleteView, DetailView, FormView, ListView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectMixin
 
-from quizzes.forms import (FilterSortQuizzesForm, QuizForm,
-                           create_question_formset, create_take_quiz_formset)
+from quizzes.forms import (
+    FilterSortQuizzesForm,
+    QuizForm,
+    create_question_formset,
+    create_take_quiz_formset,
+)
 from quizzes.models import Quiz, Score
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
@@ -23,7 +27,7 @@ class QuizWithQuestionsFormView(LoginRequiredMixin, TemplateView):
     object = None
     success_message = None
     success_url = None
-    _number_of_questions = None
+    number_of_questions = None
 
     def get(self, request, *args, **kwargs):
         QuestionsFormSet = self.get_questions_formset_class()
@@ -50,7 +54,7 @@ class QuizWithQuestionsFormView(LoginRequiredMixin, TemplateView):
 
     def get_questions_formset_class(self):
         return create_question_formset(
-            self._number_of_questions, can_delete=self.can_delete
+            self.number_of_questions, can_delete=self.can_delete
         )
 
     def forms_valid(self, quiz_form, questions_formset):
@@ -68,7 +72,7 @@ class QuizWithQuestionsFormView(LoginRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
     def dispatch(self, request, *args, **kwargs):
-        self._number_of_questions = self.get_number_of_questions(
+        self.number_of_questions = self.get_number_of_questions(
             request, default=self.default_number_of_questions
         )
 
@@ -90,7 +94,7 @@ class QuizWithQuestionsFormView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data()
-        context["number_of_questions"] = self._number_of_questions
+        context["number_of_questions"] = self.number_of_questions
         return context
 
 
