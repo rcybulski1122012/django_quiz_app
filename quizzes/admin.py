@@ -10,7 +10,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Quiz)
 class QuizAdmin(admin.ModelAdmin):
-    list_display = ["title", "author", "category", "thumbnail"]
+    list_display = ["title", "author", "category", "thumbnail", "likes"]
 
 
 @admin.register(Question)

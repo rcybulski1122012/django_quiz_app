@@ -8,4 +8,37 @@
 <p class="h2">Congratulations! You got {{ score_percentage }}% ({{ score }}/{{ quiz.questions.count }})</p>
 <a href="{% url 'quizzes:take' quiz.slug %}" class="btn btn-primary">Try one more time</a>
 <a href="{% url 'quizzes:list' %}" class="btn btn-outline-primary">Back to the quizzes list</a>
+{% if not is_liked %}
+  <button class="btn btn-success" id="like_button"><span class="bi bi-hand-thumbs-up-fill"></span></button>
+{% endif %}
+{% endblock %}
+
+{% block js %}
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2.2.1/src/js.cookie.min.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous"></script>
+<script>
+  var csrftoken = Cookies.get('csrftoken');
+
+  function csrfSafeMethod(method) {
+      // these HTTP methods do not require CSRF protection
+      return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+  }
+
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+      if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+      }
+    }
+  });
+
+  $("#like_button").click(function(){
+    $("#like_button").css("display", "none");
+    $.post("{% url 'quizzes:like' quiz.slug %}");
+  });
+
+</script>
 {% endblock %}

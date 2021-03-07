@@ -1,18 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import AnonymousUser
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView, DetailView, FormView, ListView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectMixin
 
-from quizzes.forms import (
-    FilterSortQuizzesForm,
-    QuizForm,
-    create_question_formset,
-    create_take_quiz_formset,
-)
+from quizzes.forms import (FilterSortQuizzesForm, QuizForm,
+                           create_question_formset, create_take_quiz_formset)
 from quizzes.models import Quiz, Score
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
@@ -169,7 +166,12 @@ class TakeQuizView(SingleObjectMixin, FormView):
         return render(
             self.request,
             "quizzes/quiz/score.html",
-            {"quiz": self.object, "score": score, "score_percentage": score_percentage},
+            {
+                "quiz": self.object,
+                "score": score,
+                "score_percentage": score_percentage,
+                "is_liked": self.object.is_liked(self.request.session),
+            },
         )
 
     def get_form_kwargs(self):
@@ -271,3 +273,13 @@ class QuizDetailView(DetailView):
 
     def get_queryset(self):
         return self.model.objects.select_related("author__profile", "category")
+
+
+def like_quiz_view(request, slug):
+    if not request.is_ajax():
+        return HttpResponseBadRequest()
+
+    quiz = get_object_or_404(Quiz, slug=slug)
+    if not request.session.get(quiz.get_session_like_str(), False):
+        quiz.like(request.session)
+    return HttpResponse("")

@@ -42,6 +42,10 @@ class QuizzesUtilsMixin:
     def get_quiz_detail_url(slug):
         return reverse("quizzes:detail", args=[slug])
 
+    @staticmethod
+    def get_like_quiz_url(slug):
+        return reverse("quizzes:like", args=[slug])
+
     USERNAME = "Username123"
     EMAIL = "addressemail123@gmail.com"
     PASSWORD = "SecretPass123"
@@ -133,3 +137,6 @@ class QuizzesUtilsMixin:
         return self.client.post(
             f"{self.create_quiz_url}?questions=1", data=data, follow=follow
         )
+
+    def post_ajax_request(self, *args, **kwargs):
+        return self.client.post(*args, **kwargs, HTTP_X_REQUESTED_WITH="XMLHttpRequest")

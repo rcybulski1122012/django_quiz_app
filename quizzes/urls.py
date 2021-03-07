@@ -15,4 +15,5 @@ urlpatterns = [
     path("take/<slug:slug>/", views.TakeQuizView.as_view(), name="take"),
     path("list/", views.QuizzesListView.as_view(), name="list"),
     path("detail/<slug:slug>/", views.QuizDetailView.as_view(), name="detail"),
+    path("like/<slug:slug>/", views.like_quiz_view, name="like"),
 ]

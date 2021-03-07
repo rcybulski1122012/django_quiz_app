@@ -9,17 +9,17 @@
 {% block content %}
 <h1>{{ quiz.title }}</h1>
 <form method="post">
-  {% for form in formset %}
+  {% for f in form %}
     <hr>
-    {% if form.image %}
-      <img src="{{ form.image|thumbnail_url:'question_image' }}" alt="question image" class="my-2">
+    {% if f.image %}
+      <img src="{{ f.image|thumbnail_url:'question_image' }}" alt="question image" class="my-2">
     {% endif %}
-    <p class="h3">{{ forloop.counter}}. {{ form.question_body }}</p>
+    <p class="h3">{{ forloop.counter}}. {{ f.question_body }}</p>
     <div class="ml-4">
-      {{ form|crispy }}
+      {{ f|crispy }}
     </div>
   {% endfor %}
-  {{ formset.management_form }}
+  {{ form.management_form }}
   {% csrf_token %}
   <input type="submit" value="Check your answers" class="btn btn-primary">
 </form>

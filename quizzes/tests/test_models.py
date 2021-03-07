@@ -1,4 +1,5 @@
 import datetime
+from unittest.mock import Mock
 
 from django.test import TestCase
 
@@ -89,6 +90,20 @@ class TestQuiz(QuizzesUtilsMixin, TestCase):
         self.assertQuerysetEqual(
             Quiz.objects.sort_by_number_of_questions(asc=False), expected[::-1]
         )
+
+    def test_like(self):
+        quiz_likes = self.quiz.likes
+        fake_session = {}
+        self.quiz.like(fake_session)
+        self.quiz.refresh_from_db()
+        self.assertEqual(self.quiz.likes, quiz_likes + 1)
+        self.assertTrue(fake_session[self.quiz.get_session_like_str()])
+
+    def test_is_liked(self):
+        fake_session = {}
+        self.assertFalse(self.quiz.is_liked(fake_session))
+        fake_session[self.quiz.get_session_like_str()] = True
+        self.assertTrue(self.quiz.is_liked(fake_session))
 
 
 class TestQuestion(TestCase):

@@ -7,14 +7,20 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 
-from quizzes.forms import (ALL_ANSWERS_INCORRECT_ERROR,
-                           DELETE_ALL_QUESTIONS_ERROR, SAME_QUIZ_TITLE_ERROR,
-                           TOO_LONG_WORD_ERROR, FilterSortQuizzesForm)
+from quizzes.forms import (
+    ALL_ANSWERS_INCORRECT_ERROR,
+    DELETE_ALL_QUESTIONS_ERROR,
+    SAME_QUIZ_TITLE_ERROR,
+    TOO_LONG_WORD_ERROR,
+    FilterSortQuizzesForm,
+)
 from quizzes.models import Question, Quiz, Score
 from quizzes.tests.utils import FormSetTestMixin, QuizzesUtilsMixin
-from quizzes.views import (QUIZ_CREATE_SUCCESS_MESSAGE,
-                           QUIZ_DELETE_SUCCESS_MESSAGE,
-                           QUIZ_UPDATE_SUCCESS_MESSAGE)
+from quizzes.views import (
+    QUIZ_CREATE_SUCCESS_MESSAGE,
+    QUIZ_DELETE_SUCCESS_MESSAGE,
+    QUIZ_UPDATE_SUCCESS_MESSAGE,
+)
 
 
 class TestCreateQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
@@ -469,6 +475,13 @@ class TestTakeQuizView(QuizzesUtilsMixin, FormSetTestMixin, TestCase):
         )
         self.assertTrue(Score.objects.filter(user=self.user, quiz=self.quiz).exists())
 
+    def test_is_liked_is_context_when_displays_score(self):
+        response = self.client.post(
+            self.get_take_quiz_url(self.QUIZ_SLUG), self.get_form_data()
+        )
+        context_variables = list(response.context.keys())
+        self.assertIn("is_liked", context_variables)
+
 
 class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
     @classmethod
@@ -631,3 +644,36 @@ class TestQuizDetailView(QuizzesUtilsMixin, TestCase):
         self.assertContains(response, self.category.title)
         self.assertContains(response, self.user.username)
         self.assertContains(response, self.QUIZ_DESC)
+
+
+class TestLikeQuizView(QuizzesUtilsMixin, TestCase):
+    def setUp(self):
+        self.category = self.create_category()
+        self.user = self.create_user()
+        self.quiz = self.create_quiz()
+
+    def test_returns_400_when_request_is_not_ajax(self):
+        response = self.client.post(self.get_like_quiz_url(self.QUIZ_SLUG))
+        self.assertEqual(response.status_code, 400)
+
+    def test_returns_404_when_quiz_with_given_slug_does_not_exists(self):
+        response = self.post_ajax_request(path=self.get_like_quiz_url("does-not-exist"))
+        self.assertEqual(response.status_code, 404)
+
+    def test_like_if_quiz_is_unliked(self):
+        quiz_likes = self.quiz.likes
+        self.post_ajax_request(path=self.get_like_quiz_url(self.QUIZ_SLUG))
+        self.quiz.refresh_from_db()
+        self.assertEqual(self.quiz.likes, quiz_likes + 1)
+        self.assertTrue(self.client.session[self.quiz.get_session_like_str()])
+
+    def test_does_not_like_if_quiz_is_already_liked(self):
+        self.quiz.likes = quiz_likes = 1
+        self.quiz.save()
+        session = self.client.session
+        session[self.quiz.get_session_like_str()] = True
+        session.save()
+        self.post_ajax_request(self.get_like_quiz_url(self.QUIZ_SLUG))
+        self.quiz.refresh_from_db()
+        self.assertEqual(self.quiz.likes, quiz_likes)
+        self.assertTrue(self.client.session[self.quiz.get_session_like_str()])

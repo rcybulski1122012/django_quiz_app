@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, F
 from django.urls import reverse
 from django.utils.text import slugify
 
@@ -50,6 +50,7 @@ class Quiz(models.Model):
     thumbnail = models.ImageField(
         upload_to="quiz_thumbnails/", default="default-quiz.jpg"
     )
+    likes = models.PositiveIntegerField(default=0)
 
     objects = SortQuizzesQuerySet.as_manager()
 
@@ -73,6 +74,17 @@ class Quiz(models.Model):
         return int(
             self.scores.aggregate(models.Avg("percentage"))["percentage__avg"] or 0
         )
+
+    def like(self, session):
+        self.likes = F("likes") + 1
+        self.save()
+        session[self.get_session_like_str()] = True
+
+    def is_liked(self, session):
+        return session.get(self.get_session_like_str(), False)
+
+    def get_session_like_str(self):
+        return f"like-{self.slug}"
 
 
 class Question(models.Model):
