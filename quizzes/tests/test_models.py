@@ -91,6 +91,19 @@ class TestQuiz(QuizzesUtilsMixin, TestCase):
             Quiz.objects.sort_by_number_of_questions(asc=False), expected[::-1]
         )
 
+    def test_sort_by_number_of_likes(self):
+        quiz2 = self.create_quiz(title="quiz2")
+        self.quiz.likes = 5
+        self.quiz.save()
+
+        expected = [repr(quiz) for quiz in [self.quiz, quiz2]]
+        self.assertQuerysetEqual(
+            Quiz.objects.sort_by_number_of_likes(asc=True), expected[::-1]
+        )
+        self.assertQuerysetEqual(
+            Quiz.objects.sort_by_number_of_likes(asc=False), expected
+        )
+
     def test_like(self):
         quiz_likes = self.quiz.likes
         fake_session = {}

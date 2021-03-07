@@ -8,8 +8,12 @@ from django.views.generic import DeleteView, DetailView, FormView, ListView
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import SingleObjectMixin
 
-from quizzes.forms import (FilterSortQuizzesForm, QuizForm,
-                           create_question_formset, create_take_quiz_formset)
+from quizzes.forms import (
+    FilterSortQuizzesForm,
+    QuizForm,
+    create_question_formset,
+    create_take_quiz_formset,
+)
 from quizzes.models import Quiz, Score
 
 QUIZ_CREATE_SUCCESS_MESSAGE = "Your quiz has been created successfully"
@@ -253,6 +257,8 @@ class QuizzesListView(ListView):
             qs = qs.sort_by_avg_score(asc)
         elif sorting == "length":
             qs = qs.sort_by_number_of_questions(asc)
+        elif sorting == "likes":
+            qs = qs.sort_by_number_of_likes(asc)
 
         return qs
 

@@ -34,6 +34,9 @@ class SortQuizzesQuerySet(models.QuerySet):
             .order_by("number_of_questions" if asc else "-number_of_questions")
         )
 
+    def sort_by_number_of_likes(self, asc):
+        return super().order_by("likes" if asc else "-likes")
+
 
 class Quiz(models.Model):
     title = models.CharField(max_length=100)

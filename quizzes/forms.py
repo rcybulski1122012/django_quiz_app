@@ -3,8 +3,8 @@ from django.core.exceptions import ValidationError
 from django.forms import (
     BaseFormSet,
     BaseInlineFormSet,
-    inlineformset_factory,
     formset_factory,
+    inlineformset_factory,
 )
 
 from common.utils import is_too_long_word_in_text
@@ -182,10 +182,12 @@ class FilterSortQuizzesForm(forms.Form):
         ("-avg_score", "Average score descending"),
         ("length", "Number of questions ascending"),
         ("-length", "Number of questions descending"),
+        ("likes", "Number of likes ascending"),
+        ("-likes", "Number of likes descending"),
     ]
     author = forms.CharField(required=False)
     category = forms.ChoiceField(choices=[], required=False)
-    sort_by = forms.ChoiceField(choices=SORTING_OPTIONS, required=False)
+    sorting = forms.ChoiceField(choices=SORTING_OPTIONS, required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

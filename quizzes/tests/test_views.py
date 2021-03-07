@@ -600,9 +600,11 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
 
     def test_sorting(self):
         self.quiz1.created = datetime.date(2000, 1, 1)
+        self.quiz1.likes = 5
         self.quiz1.save()
         self.create_scores(quiz=self.quiz1, user=self.user1, scores=[100, 75, 80])
         self.quiz2.created = datetime.date(2010, 10, 10)
+        self.quiz2.likes = 3
         self.quiz2.save()
         self.create_scores(quiz=self.quiz2, user=self.user1, scores=[50, 50, 40])
         self.create_question(quiz=self.quiz1, question_body="question")
@@ -621,6 +623,10 @@ class TestQuizzesListView(QuizzesUtilsMixin, TestCase):
         response = self.client.get(self.get_list_url(sorting="length"))
         self.assertQuerysetEqual(response.context["quizzes"], expected[::-1])
         response = self.client.get(self.get_list_url(sorting="-length"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected)
+        response = self.client.get(self.get_list_url(sorting="likes"))
+        self.assertQuerysetEqual(response.context["quizzes"], expected[::-1])
+        response = self.client.get(self.get_list_url(sorting="-likes"))
         self.assertQuerysetEqual(response.context["quizzes"], expected)
 
 
