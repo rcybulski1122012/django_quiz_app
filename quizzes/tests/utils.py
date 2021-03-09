@@ -15,6 +15,7 @@ class QuizzesUtilsMixin:
     login_url = reverse("accounts:login")
     profile_url = reverse("accounts:profile")
     create_quiz_url = reverse("quizzes:create")
+    home_page_urg = reverse("home")
 
     @staticmethod
     def get_update_quiz_url(slug, questions=""):

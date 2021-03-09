@@ -289,3 +289,14 @@ def like_quiz_view(request, slug):
     if not request.session.get(quiz.get_session_like_str(), False):
         quiz.like(request.session)
     return HttpResponse("")
+
+
+class HomePageView(TemplateView):
+    template_name = "quizzes/home.html"
+
+    def get_context_data(self):
+        quizzes = Quiz.objects.order_by("-likes")[:3]
+        if quizzes.count() == 3:
+            return {"quizzes": Quiz.objects.order_by("-likes")[:3]}
+        else:
+            return {"quizzes": []}

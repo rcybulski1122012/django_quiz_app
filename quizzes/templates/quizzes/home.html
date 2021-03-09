@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load easy_thumbnails_tags %}
+
+{% block title %}
+Quizzes!
+{% endblock %}
+
+{% block content %}
+<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. A accusamus commodi consequatur, delectus, dicta explicabo illo illum, ipsa laboriosam maiores minus necessitatibus nihil nostrum quibusdam quidem sint voluptates! Ab, officia.</p>
+
+{% if quizzes %}
+<h2>The most popular quizzes</h2>
+<div id="top-quizzes" class="row justify-content-center">
+  {% for quiz in quizzes %}
+    <div class="col-xl-4 col-md-6 my-3">
+      <div class="card" style="width: 20em">
+        <img src="{{ quiz.thumbnail|thumbnail_url:'quiz_thumbnail' }}" class="card-img-top" alt="quiz thumbnail">
+        <div class="card-body">
+          <h5 class="card-title">{{ quiz.title }}</h5>
+          <p class="card-text" style="height: 3em;">{{ quiz.description|truncatechars:50 }}</p>
+          <a href="{% url 'quizzes:take' quiz.slug %}" class="btn btn-primary">Take the quiz</a>
+          <a href="{{ quiz.get_absolute_url }}" class="btn btn-outline-primary">More info</a>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

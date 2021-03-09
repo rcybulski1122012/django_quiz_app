@@ -683,3 +683,37 @@ class TestLikeQuizView(QuizzesUtilsMixin, TestCase):
         self.quiz.refresh_from_db()
         self.assertEqual(self.quiz.likes, quiz_likes)
         self.assertTrue(self.client.session[self.quiz.get_session_like_str()])
+
+
+class TestHomePageView(QuizzesUtilsMixin, TestCase):
+    def test_renders_top_3_quizzes_by_likes(self):
+        category = self.create_category()
+        user = self.create_user()
+        quizzes = [
+            self.create_quiz(title=f"quiz nr {i}", user=user, category=category)
+            for i in range(5)
+        ]
+
+        quizzes[4].likes = 10
+        quizzes[4].save()
+        quizzes[2].likes = 7
+        quizzes[2].save()
+        quizzes[0].likes = 2
+        quizzes[0].save()
+
+        expected = [repr(quiz) for quiz in [quizzes[4], quizzes[2], quizzes[0]]]
+        response = self.client.get(self.home_page_urg)
+        self.assertQuerysetEqual(response.context["quizzes"], expected)
+        self.assertContains(response, 'id="top-quizzes"')
+
+    def test_displays_nothing_when_number_of_quizzes_is_less_than_3(self):
+        response = self.client.get(self.home_page_urg)
+        self.assertQuerysetEqual(response.context["quizzes"], "")
+        self.assertNotContains(response, '<div id="top-quizzes">')
+
+        category = self.create_category()
+        user = self.create_user()
+        self.create_quiz(user=user, category=category)
+
+        self.assertQuerysetEqual(response.context["quizzes"], "")
+        self.assertNotContains(response, 'id="top-quizzes"')
