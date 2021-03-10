@@ -6,9 +6,8 @@ take quizzes. Created for educational purposes.
 [Live version](https://django-quizzes-app.herokuapp.com/)
 
 ## Features
-* Creating, editing, deleting and taking quizzes
-* Sorting quizzes by a date of creation, a number of questions, or an average score
-* Filtering quizzes by an author or a category
+* Creating, editing, deleting, liking and taking quizzes
+* Sorting and filtering quizzes
 * Creating accounts, updating a profile, changing and resetting a password 
 
 ## Technologies
